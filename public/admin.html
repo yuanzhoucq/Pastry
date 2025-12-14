@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Pastry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="container">
+            <header class="page-header">
+                <div class="page-title">
+                    <span class="logo">⚙️</span>
+                    <h1>Admin Panel</h1>
+                </div>
+                <nav class="flex gap-md">
+                    <a href="/" class="btn btn-secondary">Home</a>
+                    <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+                </nav>
+            </header>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="users">Users</button>
+                <button class="tab" data-tab="invites">Invite Codes</button>
+                <button class="tab" data-tab="settings">Settings</button>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="users-tab" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Users</h2>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Pastes</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invite Codes Tab -->
+            <div id="invites-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Invite Codes</h2>
+                        <button id="generateInviteBtn" class="btn btn-primary btn-sm">+ Generate Code</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table" id="invitesTable">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Created By</th>
+                                    <th>Created</th>
+                                    <th>Used By</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content">
+                <div class="card">
+                    <h2 style="margin-bottom: var(--spacing-lg);">Site Settings</h2>
+
+                    <form id="settingsForm">
+                        <div class="form-group">
+                            <label class="form-label">Homepage Type</label>
+                            <div class="form-radio-group">
+                                <label class="form-radio">
+                                    <input type="radio" name="homepage_type" value="user_list" checked>
+                                    <span>User List</span>
+                                </label>
+                                <label class="form-radio">
+                                    <input type="radio" name="homepage_type" value="user_page">
+                                    <span>Specific User's Page</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="homepageUserGroup" style="display: none;">
+                            <label class="form-label">Homepage User</label>
+                            <input type="text" class="form-input" id="homepage_user" placeholder="Username">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Max Expiration (days)</label>
+                                <input type="number" class="form-input" id="max_expiration_days" min="1" max="365"
+                                    value="30">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Max File Size (MB)</label>
+                                <input type="number" class="form-input" id="max_file_size_mb" min="1" max="100"
+                                    value="10">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Password Modal -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>New Password Generated</h3>
+                <button class="modal-close" onclick="closeModal('passwordModal')">&times;</button>
+            </div>
+            <p>The new password for this user is:</p>
+            <div class="code-block" id="newPasswordDisplay" style="margin-top: var(--spacing-md);"></div>
+            <p class="text-muted" style="margin-top: var(--spacing-md);">Please save this password. It won't be shown
+                again.</p>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Check authentication
+        if (!API.token) {
+            window.location.href = '/admin-login.html';
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+
+        // Homepage type toggle
+        document.querySelectorAll('input[name="homepage_type"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('homepageUserGroup').style.display =
+                    radio.value === 'user_page' ? 'block' : 'none';
+            });
+        });
+
+        // Load users
+        async function loadUsers() {
+            try {
+                const users = await API.getUsers();
+                const tbody = document.querySelector('#usersTable tbody');
+
+                tbody.innerHTML = users.map(user => `
+          <tr>
+            <td>
+              <a href="/${user.username}">${user.username}</a>
+              ${user.is_admin ? '<span class="badge badge-warning" style="margin-left: 8px;">Admin</span>' : ''}
+            </td>
+            <td>${user.paste_count}</td>
+            <td>${formatDate(user.created_at)}</td>
+            <td>
+              <div class="flex gap-sm">
+                <button class="btn btn-secondary btn-sm" onclick="resetPassword(${user.id})">Reset PW</button>
+                ${!user.is_admin ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">Delete</button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `).join('');
+            } catch (err) {
+                console.error('Failed to load users:', err);
+            }
+        }
+
+        // Load invite codes
+        async function loadInviteCodes() {
+            try {
+                const codes = await API.getInviteCodes();
+                const tbody = document.querySelector('#invitesTable tbody');
+
+                tbody.innerHTML = codes.map(code => `
+          <tr>
+            <td><code>${code.code}</code></td>
+            <td>${code.created_by}</td>
+            <td>${formatDate(code.created_at)}</td>
+            <td>${code.used_by || '-'}</td>
+            <td>
+              ${!code.used_by ? `<button class="btn btn-danger btn-sm" onclick="deleteInviteCode(${code.id})">Delete</button>` :
+                        `<span class="badge badge-success">Used</span>`}
+            </td>
+          </tr>
+        `).join('');
+            } catch (err) {
+                console.error('Failed to load invite codes:', err);
+            }
+        }
+
+        // Load settings
+        async function loadSettings() {
+            try {
+                const settings = await API.getSettings();
+
+                document.querySelector(`input[name="homepage_type"][value="${settings.homepage_type}"]`).checked = true;
+                document.getElementById('homepage_user').value = settings.homepage_user || '';
+                document.getElementById('max_expiration_days').value = settings.max_expiration_days;
+                document.getElementById('max_file_size_mb').value = settings.max_file_size_mb;
+
+                if (settings.homepage_type === 'user_page') {
+                    document.getElementById('homepageUserGroup').style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Failed to load settings:', err);
+            }
+        }
+
+        // Generate invite code
+        document.getElementById('generateInviteBtn').addEventListener('click', async () => {
+            try {
+                const result = await API.createInviteCode();
+                alert(`New invite code: ${result.code}`);
+                loadInviteCodes();
+            } catch (err) {
+                alert('Failed to generate code: ' + err.message);
+            }
+        });
+
+        // Save settings
+        document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            try {
+                await API.updateSettings({
+                    homepage_type: document.querySelector('input[name="homepage_type"]:checked').value,
+                    homepage_user: document.getElementById('homepage_user').value,
+                    max_expiration_days: document.getElementById('max_expiration_days').value,
+                    max_file_size_mb: document.getElementById('max_file_size_mb').value
+                });
+
+                alert('Settings saved successfully!');
+            } catch (err) {
+                alert('Failed to save settings: ' + err.message);
+            }
+        });
+
+        // Reset password
+        async function resetPassword(userId) {
+            if (!confirm('Reset this user\'s password?')) return;
+
+            try {
+                const result = await API.updateUser(userId, { resetPassword: true });
+                document.getElementById('newPasswordDisplay').textContent = result.newPassword;
+                openModal('passwordModal');
+                loadUsers();
+            } catch (err) {
+                alert('Failed to reset password: ' + err.message);
+            }
+        }
+
+        // Delete user
+        async function deleteUser(userId) {
+            if (!confirm('Delete this user and all their pastes?')) return;
+
+            try {
+                await API.deleteUser(userId);
+                loadUsers();
+            } catch (err) {
+                alert('Failed to delete user: ' + err.message);
+            }
+        }
+
+        // Delete invite code
+        async function deleteInviteCode(codeId) {
+            if (!confirm('Delete this invite code?')) return;
+
+            try {
+                await API.deleteInviteCode(codeId);
+                loadInviteCodes();
+            } catch (err) {
+                alert('Failed to delete code: ' + err.message);
+            }
+        }
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            API.clearAdminToken();
+            window.location.href = '/';
+        });
+
+        // Initial load
+        loadUsers();
+        loadInviteCodes();
+        loadSettings();
+    </script>
+</body>
+
+</html>

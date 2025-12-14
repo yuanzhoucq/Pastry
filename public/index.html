@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pastry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="page">
+    <div class="container">
+      <header class="page-header">
+        <div class="page-title">
+          <span class="logo">📋</span>
+          <h1>Pastry</h1>
+        </div>
+        <nav class="flex gap-md">
+          <a href="/register.html" class="btn btn-secondary">Register</a>
+          <a href="/admin-login.html" class="btn btn-primary">Admin</a>
+        </nav>
+      </header>
+      
+      <main id="content">
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>Loading...</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    async function loadHomepage() {
+      const content = document.getElementById('content');
+      
+      try {
+        const data = await API.getHomepage();
+        
+        if (data.type === 'redirect' && data.username) {
+          // Redirect to user page
+          window.location.href = `/${data.username}`;
+          return;
+        }
+        
+        if (data.type === 'user_list') {
+          if (data.users.length === 0) {
+            content.innerHTML = `
+              <div class="empty-state">
+                <div class="empty-state-icon">👥</div>
+                <p>No users yet</p>
+              </div>
+            `;
+            return;
+          }
+          
+          content.innerHTML = `
+            <h2 style="margin-bottom: var(--spacing-lg)">Users</h2>
+            <div class="user-grid">
+              ${data.users.map(user => `
+                <a href="/${user.username}" class="user-card">
+                  <div class="user-avatar">${user.username[0].toUpperCase()}</div>
+                  <div class="user-name">${user.username}</div>
+                  <div class="user-stats">${user.paste_count} paste${user.paste_count !== 1 ? 's' : ''}</div>
+                </a>
+              `).join('')}
+            </div>
+          `;
+        }
+      } catch (err) {
+        content.innerHTML = `
+          <div class="alert alert-error">Failed to load homepage: ${err.message}</div>
+        `;
+      }
+    }
+    
+    loadHomepage();
+  </script>
+</body>
+</html>

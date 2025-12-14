@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">User - Pastry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="container">
+            <header class="page-header">
+                <div class="page-title">
+                    <span class="logo">👤</span>
+                    <h1 id="username">Loading...</h1>
+                </div>
+                <nav class="flex gap-md">
+                    <a href="/" class="btn btn-secondary">Home</a>
+                    <button id="unlockBtn" class="btn btn-primary">🔓 Unlock</button>
+                    <button id="lockBtn" class="btn btn-secondary hidden">🔒 Lock</button>
+                </nav>
+            </header>
+
+            <!-- Create Paste Section (shown when unlocked) -->
+            <div id="createSection" class="hidden" style="margin-bottom: var(--spacing-xl);">
+                <div class="card">
+                    <h2 style="margin-bottom: var(--spacing-lg);">Create New Paste</h2>
+
+                    <div class="tabs" style="border-bottom: none; margin-bottom: var(--spacing-md);">
+                        <button class="tab active" data-type="text">📝 Text</button>
+                        <button class="tab" data-type="file">📁 File</button>
+                    </div>
+
+                    <form id="createPasteForm">
+                        <!-- Text Input -->
+                        <div id="textInput" class="form-group">
+                            <textarea class="form-textarea" id="pasteContent"
+                                placeholder="Paste your content here..."></textarea>
+                        </div>
+
+                        <!-- File Input -->
+                        <div id="fileInput" class="form-group hidden">
+                            <div class="file-upload" id="dropZone">
+                                <div class="file-upload-icon">📤</div>
+                                <p class="file-upload-text">Drag & drop a file or click to browse</p>
+                                <input type="file" id="pasteFile">
+                            </div>
+                            <div id="selectedFile" class="hidden" style="margin-top: var(--spacing-md);"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Name (optional)</label>
+                                <input type="text" class="form-input" id="pasteName"
+                                    placeholder="Leave empty for random">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Expires in (days)</label>
+                                <input type="number" class="form-input" id="pasteExpires" min="0"
+                                    placeholder="0 = never">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Password Protection</label>
+                            <div class="form-radio-group">
+                                <label class="form-radio">
+                                    <input type="radio" name="passwordOption" value="none" checked>
+                                    <span>None (public)</span>
+                                </label>
+                                <label class="form-radio">
+                                    <input type="radio" name="passwordOption" value="default">
+                                    <span>Default</span>
+                                </label>
+                                <label class="form-radio">
+                                    <input type="radio" name="passwordOption" value="random">
+                                    <span>Random</span>
+                                </label>
+                                <label class="form-radio">
+                                    <input type="radio" name="passwordOption" value="custom">
+                                    <span>Custom</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group hidden" id="customPasswordGroup">
+                            <label class="form-label">Custom Password</label>
+                            <input type="text" class="form-input" id="customPassword" placeholder="Enter password">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Create Paste</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Paste List -->
+            <div id="pasteList">
+                <h2 style="margin-bottom: var(--spacing-lg);">Pastes</h2>
+                <div id="pasteListContent" class="paste-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unlock Modal -->
+    <div class="modal-overlay" id="unlockModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🔓 Unlock Homepage</h3>
+                <button class="modal-close" onclick="closeModal('unlockModal')">&times;</button>
+            </div>
+            <form id="unlockForm">
+                <div id="unlockAlert"></div>
+                <div class="form-group">
+                    <label class="form-label">Your Password</label>
+                    <input type="password" class="form-input" id="unlockPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Unlock</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Paste Modal -->
+    <div class="modal-overlay" id="viewModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 id="viewPasteName">Paste</h3>
+                <button class="modal-close" onclick="closeModal('viewModal')">&times;</button>
+            </div>
+
+            <!-- Password Form -->
+            <div id="viewPasswordForm">
+                <div id="viewAlert"></div>
+                <div class="form-group">
+                    <label class="form-label">Enter Password</label>
+                    <input type="password" class="form-input" id="viewPassword">
+                </div>
+                <button class="btn btn-primary" onclick="verifyPastePassword()">Verify</button>
+            </div>
+
+            <!-- Content Display -->
+            <div id="viewContent" class="hidden">
+                <div id="textContent" class="code-block" style="max-height: 400px; overflow: auto;"></div>
+                <div id="fileContent" class="hidden">
+                    <p>Ready to download: <strong id="fileName"></strong></p>
+                    <button class="btn btn-primary" id="downloadBtn" style="margin-top: var(--spacing-md);">Download
+                        File</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generated Password Modal -->
+    <div class="modal-overlay" id="generatedPasswordModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🔑 Generated Password</h3>
+                <button class="modal-close" onclick="closeModal('generatedPasswordModal')">&times;</button>
+            </div>
+            <p>Your paste was created with this password:</p>
+            <div class="code-block" id="generatedPassword"
+                style="margin-top: var(--spacing-md); font-size: 1.2rem; text-align: center;"></div>
+            <p class="text-muted" style="margin-top: var(--spacing-md);">⚠️ Save this password - it won't be shown
+                again!</p>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        const pageUsername = window.location.pathname.slice(1);
+        let isUnlocked = false;
+        let currentPasteId = null;
+        let currentPasteType = null;
+        let pasteType = 'text';
+
+        // Initialize
+        document.getElementById('username').textContent = pageUsername;
+        document.getElementById('pageTitle').textContent = `${pageUsername} - Pastry`;
+
+        // Tab switching for paste type
+        document.querySelectorAll('.tabs .tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                pasteType = tab.dataset.type;
+
+                document.getElementById('textInput').classList.toggle('hidden', pasteType !== 'text');
+                document.getElementById('fileInput').classList.toggle('hidden', pasteType !== 'file');
+            });
+        });
+
+        // Password option toggle
+        document.querySelectorAll('input[name="passwordOption"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('customPasswordGroup').classList.toggle('hidden', radio.value !== 'custom');
+            });
+        });
+
+        // File drag and drop
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('pasteFile');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('active');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('active');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('active');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileDisplay();
+            }
+        });
+
+        fileInput.addEventListener('change', updateFileDisplay);
+
+        function updateFileDisplay() {
+            const file = fileInput.files[0];
+            const display = document.getElementById('selectedFile');
+            if (file) {
+                display.classList.remove('hidden');
+                display.innerHTML = `
+          <div class="alert alert-info">
+            📎 ${file.name} (${formatSize(file.size)})
+          </div>
+        `;
+            } else {
+                display.classList.add('hidden');
+            }
+        }
+
+        // Load pastes
+        async function loadPastes() {
+            try {
+                const data = await API.getUserPage(pageUsername);
+                const container = document.getElementById('pasteListContent');
+
+                if (data.pastes.length === 0) {
+                    container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">📭</div>
+              <p>No pastes yet</p>
+            </div>
+          `;
+                    return;
+                }
+
+                container.innerHTML = data.pastes.map(paste => `
+          <div class="paste-item" data-id="${paste.id}" onclick="viewPaste('${paste.id}', '${paste.type}', ${paste.has_password})">
+            <div class="paste-info">
+              <div class="paste-name">
+                <span class="icon">${paste.type === 'text' ? '📝' : '📁'}</span>
+                ${paste.name}
+                ${paste.has_password ? '<span class="badge">🔒</span>' : ''}
+              </div>
+              <div class="paste-meta">
+                <span>${formatDate(paste.created_at)}</span>
+                <span>${formatSize(paste.size)}</span>
+                ${paste.expires_at ? `<span>Expires ${formatDate(paste.expires_at)}</span>` : ''}
+              </div>
+            </div>
+            ${isUnlocked ? `
+              <div class="paste-actions" onclick="event.stopPropagation()">
+                <button class="btn btn-danger btn-sm" onclick="deletePaste('${paste.id}')">Delete</button>
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+            } catch (err) {
+                document.getElementById('pasteListContent').innerHTML = `
+          <div class="alert alert-error">User not found</div>
+        `;
+            }
+        }
+
+        // Unlock homepage
+        document.getElementById('unlockBtn').addEventListener('click', () => {
+            openModal('unlockModal');
+        });
+
+        document.getElementById('unlockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('unlockPassword').value;
+
+            try {
+                const result = await API.unlockUserPage(pageUsername, password);
+                API.setUserToken(result.token);
+                isUnlocked = true;
+
+                document.getElementById('unlockBtn').classList.add('hidden');
+                document.getElementById('lockBtn').classList.remove('hidden');
+                document.getElementById('createSection').classList.remove('hidden');
+
+                closeModal('unlockModal');
+                loadPastes();
+            } catch (err) {
+                showAlert(document.getElementById('unlockAlert'), err.message);
+            }
+        });
+
+        // Lock
+        document.getElementById('lockBtn').addEventListener('click', () => {
+            API.clearUserToken();
+            isUnlocked = false;
+
+            document.getElementById('unlockBtn').classList.remove('hidden');
+            document.getElementById('lockBtn').classList.add('hidden');
+            document.getElementById('createSection').classList.add('hidden');
+
+            loadPastes();
+        });
+
+        // Create paste
+        document.getElementById('createPasteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+
+            if (pasteType === 'text') {
+                const content = document.getElementById('pasteContent').value;
+                if (!content.trim()) {
+                    alert('Please enter some content');
+                    return;
+                }
+                formData.append('content', content);
+            } else {
+                const file = document.getElementById('pasteFile').files[0];
+                if (!file) {
+                    alert('Please select a file');
+                    return;
+                }
+                formData.append('file', file);
+            }
+
+            const name = document.getElementById('pasteName').value.trim();
+            if (name) formData.append('name', name);
+
+            const expires = document.getElementById('pasteExpires').value;
+            if (expires && parseInt(expires) > 0) {
+                formData.append('expiresIn', expires);
+            }
+
+            const passwordOption = document.querySelector('input[name="passwordOption"]:checked').value;
+            formData.append('passwordOption', passwordOption);
+
+            if (passwordOption === 'custom') {
+                formData.append('customPassword', document.getElementById('customPassword').value);
+            }
+
+            try {
+                const result = await API.createPaste(formData);
+
+                // Show generated password if applicable
+                if (result.generatedPassword) {
+                    document.getElementById('generatedPassword').textContent = result.generatedPassword;
+                    openModal('generatedPasswordModal');
+                }
+
+                // Reset form
+                document.getElementById('createPasteForm').reset();
+                document.getElementById('selectedFile').classList.add('hidden');
+                document.getElementById('customPasswordGroup').classList.add('hidden');
+
+                loadPastes();
+            } catch (err) {
+                alert('Failed to create paste: ' + err.message);
+            }
+        });
+
+        // View paste
+        function viewPaste(id, type, hasPassword) {
+            currentPasteId = id;
+            currentPasteType = type;
+
+            document.getElementById('viewPasteName').textContent = 'View Paste';
+            document.getElementById('viewPasswordForm').classList.toggle('hidden', !hasPassword);
+            document.getElementById('viewContent').classList.toggle('hidden', hasPassword);
+            document.getElementById('viewPassword').value = '';
+            document.getElementById('viewAlert').innerHTML = '';
+
+            if (!hasPassword) {
+                // Load content directly
+                loadPasteContent(id);
+            }
+
+            openModal('viewModal');
+        }
+
+        async function verifyPastePassword() {
+            const password = document.getElementById('viewPassword').value;
+
+            try {
+                const result = await API.verifyPaste(currentPasteId, password);
+
+                document.getElementById('viewPasswordForm').classList.add('hidden');
+                document.getElementById('viewContent').classList.remove('hidden');
+
+                displayPasteContent(result);
+            } catch (err) {
+                showAlert(document.getElementById('viewAlert'), err.message);
+            }
+        }
+
+        async function loadPasteContent(id) {
+            try {
+                const result = await API.verifyPaste(id, '');
+                displayPasteContent(result);
+            } catch (err) {
+                // Needs password after all
+                document.getElementById('viewPasswordForm').classList.remove('hidden');
+                document.getElementById('viewContent').classList.add('hidden');
+            }
+        }
+
+        function displayPasteContent(result) {
+            const textContent = document.getElementById('textContent');
+            const fileContent = document.getElementById('fileContent');
+
+            if (result.content !== undefined) {
+                textContent.textContent = result.content;
+                textContent.classList.remove('hidden');
+                fileContent.classList.add('hidden');
+            } else if (result.download) {
+                textContent.classList.add('hidden');
+                fileContent.classList.remove('hidden');
+                document.getElementById('fileName').textContent = result.filename;
+                document.getElementById('downloadBtn').onclick = () => {
+                    window.location.href = `/api/pastes/${currentPasteId}/download?token=${currentPasteId}`;
+                };
+            }
+        }
+
+        // Delete paste
+        async function deletePaste(id) {
+            if (!confirm('Delete this paste?')) return;
+
+            try {
+                await API.deletePaste(id);
+                loadPastes();
+            } catch (err) {
+                alert('Failed to delete: ' + err.message);
+            }
+        }
+
+        // Initialize
+        loadPastes();
+
+        // Check if we have a valid user token for this user
+        if (API.userToken) {
+            try {
+                // Try to make an authenticated request to verify token
+                fetch('/api/pastes', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${API.userToken}` },
+                    body: new FormData()
+                }).catch(() => { });
+            } catch { }
+        }
+    </script>
+</body>
+
+</html>

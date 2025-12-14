@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Pastry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="container" style="max-width: 450px; padding-top: 10vh;">
+            <div class="text-center" style="margin-bottom: var(--spacing-xl);">
+                <span style="font-size: 3rem;">📋</span>
+                <h1 style="margin-top: var(--spacing-md);">Create Account</h1>
+                <p class="text-muted">Join Pastry with an invite code</p>
+            </div>
+
+            <div class="card">
+                <form id="registerForm">
+                    <div id="alertContainer"></div>
+
+                    <div class="form-group">
+                        <label class="form-label">Invite Code</label>
+                        <input type="text" class="form-input" id="inviteCode" placeholder="word-word" required
+                            autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-input" id="username" placeholder="Choose a username" required
+                            pattern="[a-zA-Z0-9_-]+" minlength="3" maxlength="30">
+                        <small class="text-muted" style="display: block; margin-top: 4px;">3-30 characters, letters,
+                            numbers, dash and underscore only</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="password" placeholder="Choose a password" required
+                            minlength="4">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm password"
+                            required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+                </form>
+            </div>
+
+            <p class="text-center text-muted" style="margin-top: var(--spacing-lg);">
+                <a href="/">← Back to home</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = '';
+
+            const inviteCode = document.getElementById('inviteCode').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showAlert(alertContainer, 'Passwords do not match');
+                return;
+            }
+
+            try {
+                await API.register(username, password, inviteCode);
+
+                alertContainer.innerHTML = `
+          <div class="alert alert-success animate-in">
+            Account created successfully! Your homepage is <a href="/${username}">/${username}</a>
+          </div>
+        `;
+
+                document.getElementById('registerForm').reset();
+            } catch (err) {
+                showAlert(alertContainer, err.message);
+            }
+        });
+    </script>
+</body>
+
+</html>

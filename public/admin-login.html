@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Pastry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="container" style="max-width: 400px; padding-top: 15vh;">
+            <div class="text-center" style="margin-bottom: var(--spacing-xl);">
+                <span style="font-size: 3rem;">🔐</span>
+                <h1 style="margin-top: var(--spacing-md);">Admin Login</h1>
+            </div>
+
+            <div class="card">
+                <form id="loginForm">
+                    <div id="alertContainer"></div>
+
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-input" id="username" placeholder="admin" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="password" placeholder="word-word" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                </form>
+            </div>
+
+            <p class="text-center text-muted" style="margin-top: var(--spacing-lg);">
+                <a href="/">← Back to home</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Check if already logged in
+        if (API.token) {
+            window.location.href = '/admin.html';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = '';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            try {
+                const data = await API.adminLogin(username, password);
+                API.setAdminToken(data.token);
+                window.location.href = '/admin.html';
+            } catch (err) {
+                showAlert(alertContainer, err.message);
+            }
+        });
+    </script>
+</body>
+
+</html>
