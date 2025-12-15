@@ -26,7 +26,15 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({ storage });
+const upload = multer({
+    storage,
+    // Fix Chinese filename encoding: multer decodes as latin1, but browsers send UTF-8
+    fileFilter: (req, file, cb) => {
+        // Re-encode originalname from latin1 to UTF-8
+        file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+        cb(null, true);
+    }
+});
 
 // Helper to get settings
 function getSettings() {
@@ -262,7 +270,10 @@ router.get('/:id/download', (req, res) => {
         return res.status(404).json({ error: 'File not found on server' });
     }
 
-    res.download(filePath, paste.original_filename);
+    // Encode filename for proper display of non-ASCII characters (like Chinese)
+    const encodedFilename = encodeURIComponent(paste.original_filename).replace(/'/g, '%27');
+    res.setHeader('Content-Disposition', `attachment; filename="${paste.original_filename}"; filename*=UTF-8''${encodedFilename}`);
+    res.download(filePath);
 });
 
 // Delete paste (owner only)
