@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/:username', (req, res) => {
     const { username } = req.params;
 
-    const user = db.prepare('SELECT id, username, created_at, allow_anonymous_upload FROM users WHERE username = ?').get(username);
+    const user = db.prepare('SELECT id, username, display_name, created_at, allow_anonymous_upload FROM users WHERE username = ?').get(username);
 
     if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -54,6 +54,7 @@ router.get('/:username', (req, res) => {
     res.json({
         user: {
             username: user.username,
+            displayName: user.display_name || user.username,
             created_at: user.created_at
         },
         pastes,
@@ -102,7 +103,7 @@ router.post('/:username/unlock', (req, res) => {
 // Update user settings (requires authentication)
 router.put('/:username/settings', (req, res) => {
     const { username } = req.params;
-    const { allow_anonymous_upload } = req.body;
+    const { allow_anonymous_upload, display_name } = req.body;
 
     // Verify auth token
     const authHeader = req.headers.authorization;
@@ -132,9 +133,20 @@ router.put('/:username/settings', (req, res) => {
         return res.status(403).json({ error: 'Not authorized' });
     }
 
+    // Update allow_anonymous_upload if provided
     if (allow_anonymous_upload !== undefined) {
         db.prepare('UPDATE users SET allow_anonymous_upload = ? WHERE id = ?')
             .run(allow_anonymous_upload ? 1 : 0, user.id);
+    }
+
+    // Update display_name if provided (can be null/empty to clear)
+    if (display_name !== undefined) {
+        const trimmedName = display_name ? display_name.trim() : null;
+        if (trimmedName && trimmedName.length > 50) {
+            return res.status(400).json({ error: 'Display name must be 50 characters or less' });
+        }
+        db.prepare('UPDATE users SET display_name = ? WHERE id = ?')
+            .run(trimmedName || null, user.id);
     }
 
     res.json({ success: true });

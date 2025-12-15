@@ -67,10 +67,10 @@ const API = {
         });
     },
 
-    async register(username, password, inviteCode) {
+    async register(username, password, inviteCode, displayName) {
         return this.request('/api/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ username, password, inviteCode })
+            body: JSON.stringify({ username, password, inviteCode, displayName })
         });
     },
 

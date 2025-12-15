@@ -70,8 +70,8 @@
             <div class="user-grid">
               ${data.users.map(user => `
                 <a href="/${user.username}" class="user-card">
-                  <div class="user-avatar">${user.username[0].toUpperCase()}</div>
-                  <div class="user-name">${user.username}</div>
+                  <div class="user-avatar">${(user.displayName || user.username)[0].toUpperCase()}</div>
+                  <div class="user-name">${user.displayName || user.username}</div>
                   <div class="user-stats">${user.paste_count} paste${user.paste_count !== 1 ? 's' : ''}</div>
                 </a>
               `).join('')}

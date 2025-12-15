@@ -12,7 +12,7 @@ router.use(requireAdmin);
 // Get all users
 router.get('/users', (req, res) => {
     const users = db.prepare(`
-    SELECT id, username, is_admin, default_password, created_at,
+    SELECT id, username, display_name, is_admin, default_password, created_at,
       (SELECT COUNT(*) FROM pastes WHERE user_id = users.id) as paste_count
     FROM users
     ORDER BY created_at DESC

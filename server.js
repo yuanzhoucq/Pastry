@@ -47,12 +47,19 @@ app.get('/api/homepage', (req, res) => {
 
     if (settings.homepage_type === 'user_list') {
         const users = db.prepare(`
-      SELECT username, created_at,
+      SELECT username, display_name, created_at,
         (SELECT COUNT(*) FROM pastes WHERE user_id = users.id AND (expires_at IS NULL OR expires_at > datetime('now'))) as paste_count
       FROM users
       ORDER BY created_at DESC
     `).all();
-        res.json({ type: 'user_list', users });
+        // Map display_name to displayName for frontend consistency
+        const mappedUsers = users.map(u => ({
+            username: u.username,
+            displayName: u.display_name || u.username,
+            created_at: u.created_at,
+            paste_count: u.paste_count
+        }));
+        res.json({ type: 'user_list', users: mappedUsers });
     } else if (settings.homepage_type === 'user_page' && settings.homepage_user) {
         res.json({ type: 'redirect', username: settings.homepage_user });
     } else {

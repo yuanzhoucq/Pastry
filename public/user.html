@@ -380,6 +380,11 @@
                 const data = await API.getUserPage(pageUsername);
                 const container = document.getElementById('pasteListContent');
 
+                // Update display name in header and page title
+                const displayName = data.user.displayName || pageUsername;
+                document.getElementById('username').textContent = `/ ${displayName}`;
+                document.getElementById('pageTitle').textContent = `${displayName} - Pastry`;
+
                 // Update allowAnonymousUpload from server
                 allowAnonymousUpload = data.allowAnonymousUpload;
 

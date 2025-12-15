@@ -101,6 +101,14 @@ try {
   console.log('[Migration] Added disabled column to invite_codes table');
 }
 
+// Migration: Add display_name column to users if it doesn't exist
+try {
+  db.prepare('SELECT display_name FROM users LIMIT 1').get();
+} catch {
+  db.exec('ALTER TABLE users ADD COLUMN display_name TEXT');
+  console.log('[Migration] Added display_name column to users table');
+}
+
 // Migration: Migrate used_by data to invite_code_uses table
 try {
   const hasUsedBy = db.prepare("SELECT name FROM pragma_table_info('invite_codes') WHERE name = 'used_by'").get();

@@ -43,7 +43,7 @@ router.post('/login', (req, res) => {
 
 // User registration (requires invite code)
 router.post('/register', (req, res) => {
-    const { username, password, inviteCode } = req.body;
+    const { username, password, inviteCode, displayName } = req.body;
 
     if (!username || !password || !inviteCode) {
         return res.status(400).json({ error: 'Username, password, and invite code required' });
@@ -52,6 +52,12 @@ router.post('/register', (req, res) => {
     // Validate username format
     if (!/^[a-zA-Z0-9_-]+$/.test(username) || username.length < 3 || username.length > 30) {
         return res.status(400).json({ error: 'Username must be 3-30 characters, alphanumeric, dash, or underscore only' });
+    }
+
+    // Validate display name if provided (allow any characters, max 50)
+    const trimmedDisplayName = displayName ? displayName.trim() : null;
+    if (trimmedDisplayName && trimmedDisplayName.length > 50) {
+        return res.status(400).json({ error: 'Display name must be 50 characters or less' });
     }
 
     // Check reserved usernames - 'app' prefix is reserved for system routes
@@ -76,8 +82,8 @@ router.post('/register', (req, res) => {
     const passwordHash = bcrypt.hashSync(password, 10);
 
     const registerUser = db.transaction(() => {
-        const result = db.prepare('INSERT INTO users (username, password_hash, default_password) VALUES (?, ?, ?)')
-            .run(username, passwordHash, password);
+        const result = db.prepare('INSERT INTO users (username, password_hash, default_password, display_name) VALUES (?, ?, ?, ?)')
+            .run(username, passwordHash, password, trimmedDisplayName);
 
         // Record the usage (allow multiple users per code)
         db.prepare("INSERT INTO invite_code_uses (invite_code_id, user_id) VALUES (?, ?)")

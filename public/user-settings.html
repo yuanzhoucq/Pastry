@@ -40,12 +40,21 @@
                     </div>
                 </div>
 
-                <!-- Settings Form (shown when unlocked) -->
                 <div id="settingsContent" class="hidden">
                     <div class="card">
                         <h2 style="margin-bottom: var(--spacing-lg);">Profile Settings</h2>
 
                         <form id="settingsForm">
+                            <div class="form-group">
+                                <label class="form-label">Display Name</label>
+                                <input type="text" class="form-input" id="displayName"
+                                    placeholder="Enter your display name" maxlength="50">
+                                <p class="text-muted" style="margin-top: var(--spacing-xs); font-size: 0.85rem;">
+                                    Your visible name. Can include spaces, Chinese characters, emoji, etc. Leave blank
+                                    to use your username.
+                                </p>
+                            </div>
+
                             <div class="form-group">
                                 <label class="form-checkbox">
                                     <input type="checkbox" id="allowAnonUpload" checked>
@@ -65,8 +74,11 @@
                     <div class="card" style="margin-top: var(--spacing-md);">
                         <h2 style="margin-bottom: var(--spacing-md);">Account Info</h2>
                         <div class="form-group">
-                            <label class="form-label">Username</label>
+                            <label class="form-label">Username (URL)</label>
                             <p id="displayUsername" style="font-weight: 500;"></p>
+                            <p class="text-muted" style="margin-top: var(--spacing-xs); font-size: 0.85rem;">
+                                Your URL path cannot be changed.
+                            </p>
                         </div>
                         <div class="form-group" id="defaultPasswordSection">
                             <label class="form-label">Default Password</label>
@@ -112,6 +124,7 @@
         document.getElementById('displayUsername').textContent = pageUsername;
 
         let isUnlocked = false;
+        let currentDisplayName = '';
 
         // Check if already has a valid token
         async function checkAuth() {
@@ -121,18 +134,22 @@
                 // Try to load settings to verify token is valid
                 const data = await API.getUserPage(pageUsername);
                 // Token seems valid, unlock the UI
-                unlockUI(data.allowAnonymousUpload);
+                unlockUI(data.allowAnonymousUpload, data.user.displayName);
             } catch (err) {
                 // Token invalid, clear it
                 API.clearUserToken();
             }
         }
 
-        function unlockUI(allowAnonymousUpload, defaultPassword = null) {
+        function unlockUI(allowAnonymousUpload, displayName = null, defaultPassword = null) {
             isUnlocked = true;
             document.getElementById('lockedState').classList.add('hidden');
             document.getElementById('settingsContent').classList.remove('hidden');
             document.getElementById('allowAnonUpload').checked = allowAnonymousUpload;
+
+            // Set display name (empty if same as username to show placeholder)
+            currentDisplayName = displayName === pageUsername ? '' : (displayName || '');
+            document.getElementById('displayName').value = currentDisplayName;
 
             if (defaultPassword) {
                 document.getElementById('displayDefaultPassword').textContent = defaultPassword;
@@ -150,8 +167,12 @@
                 const result = await API.unlockUserPage(pageUsername, password);
                 API.setUserToken(result.token);
 
+                // Also fetch user data to get display name
+                const userData = await API.getUserPage(pageUsername);
+
                 unlockUI(
                     result.user.allow_anonymous_upload,
+                    userData.user.displayName,
                     result.user.default_password
                 );
 
@@ -166,10 +187,12 @@
             e.preventDefault();
 
             const allowAnonUpload = document.getElementById('allowAnonUpload').checked;
+            const displayName = document.getElementById('displayName').value.trim();
 
             try {
                 await API.updateUserSettings(pageUsername, {
-                    allow_anonymous_upload: allowAnonUpload
+                    allow_anonymous_upload: allowAnonUpload,
+                    display_name: displayName || null
                 });
                 showModal({ title: 'Success', message: 'Settings saved successfully!', type: 'success' });
             } catch (err) {

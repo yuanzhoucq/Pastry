@@ -176,10 +176,14 @@
                 const users = await API.getUsers();
                 const tbody = document.querySelector('#usersTable tbody');
 
-                tbody.innerHTML = users.map(user => `
+                tbody.innerHTML = users.map(user => {
+                    const displayName = user.display_name || user.username;
+                    const showDisplayName = user.display_name && user.display_name !== user.username;
+                    return `
           <tr>
             <td>
               <a href="/${user.username}">${user.username}</a>
+              ${showDisplayName ? `<span class="text-muted" style="margin-left: 8px;">(${user.display_name})</span>` : ''}
               ${user.is_admin ? '<span class="badge badge-warning" style="margin-left: 8px;">Admin</span>' : ''}
             </td>
             <td>${user.paste_count}</td>
@@ -191,7 +195,8 @@
               </div>
             </td>
           </tr>
-        `).join('');
+        `;
+                }).join('');
             } catch (err) {
                 console.error('Failed to load users:', err);
             }
