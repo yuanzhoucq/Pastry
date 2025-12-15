@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/:username', (req, res) => {
     const { username } = req.params;
 
-    const user = db.prepare('SELECT id, username, created_at FROM users WHERE username = ?').get(username);
+    const user = db.prepare('SELECT id, username, created_at, allow_anonymous_upload FROM users WHERE username = ?').get(username);
 
     if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -29,7 +29,8 @@ router.get('/:username', (req, res) => {
             username: user.username,
             created_at: user.created_at
         },
-        pastes
+        pastes,
+        allowAnonymousUpload: user.allow_anonymous_upload === 1
     });
 });
 
@@ -64,9 +65,51 @@ router.post('/:username/unlock', (req, res) => {
         user: {
             id: user.id,
             username: user.username,
-            default_password: user.default_password
+            default_password: user.default_password,
+            allow_anonymous_upload: user.allow_anonymous_upload === 1
         }
     });
+});
+
+// Update user settings (requires authentication)
+router.put('/:username/settings', (req, res) => {
+    const { username } = req.params;
+    const { allow_anonymous_upload } = req.body;
+
+    // Verify auth token
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const jwt = require('jsonwebtoken');
+    const { JWT_SECRET } = require('../middleware/auth');
+
+    let userId;
+    try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userId = decoded.userId;
+    } catch {
+        return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+
+    if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.id !== userId) {
+        return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    if (allow_anonymous_upload !== undefined) {
+        db.prepare('UPDATE users SET allow_anonymous_upload = ? WHERE id = ?')
+            .run(allow_anonymous_upload ? 1 : 0, user.id);
+    }
+
+    res.json({ success: true });
 });
 
 module.exports = router;

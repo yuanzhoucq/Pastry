@@ -115,6 +115,14 @@ const API = {
         });
     },
 
+    async updateUserSettings(username, settings) {
+        return this.request(`/api/users/${username}/settings`, {
+            method: 'PUT',
+            body: JSON.stringify(settings),
+            useUserToken: true
+        });
+    },
+
     // Pastes
     async createPaste(formData) {
         const token = this.userToken || this.token;

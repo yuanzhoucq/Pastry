@@ -176,8 +176,25 @@ a:hover {
   font-weight: 600;
 }
 
+.header-home {
+  color: inherit;
+  text-decoration: none;
+}
+
+.header-home:hover {
+  color: var(--accent-primary);
+}
+
 .logo {
   font-size: 1.25rem;
+}
+
+.header-username {
+  display: inline-block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 0 0.35em;
 }
 
 /* Main Content */
@@ -399,6 +416,20 @@ a:hover {
 }
 
 .form-radio input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-primary);
+}
+
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.form-checkbox input {
   width: 16px;
   height: 16px;
   accent-color: var(--accent-primary);
@@ -870,6 +901,10 @@ a:hover {
 
 .items-center {
   align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
 }
 
 .gap-sm {

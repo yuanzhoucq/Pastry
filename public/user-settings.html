@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Settings - Pastry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/theme.js"></script>
+</head>
+
+<body>
+    <div class="page">
+        <header class="header-bar">
+            <div class="container">
+                <div class="page-title">
+                    <h1><a href="/" class="header-home">Pastry</a><span id="headerPath" class="header-username"></span>
+                    </h1>
+                </div>
+                <nav class="flex gap-sm items-center">
+                    <a id="backToProfile">← Back</a>
+                    <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙</button>
+                </nav>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="container" style="max-width: 600px;">
+                <!-- Not Unlocked State -->
+                <div id="lockedState" class="card text-center">
+                    <div style="padding: var(--spacing-xl);">
+                        <div style="font-size: 3rem; margin-bottom: var(--spacing-md);">🔒</div>
+                        <h2 style="margin-bottom: var(--spacing-md);">Authentication Required</h2>
+                        <p class="text-muted" style="margin-bottom: var(--spacing-lg);">Please unlock your profile to
+                            access settings.</p>
+                        <button class="btn btn-primary" onclick="openModal('unlockModal')">🔓 Unlock</button>
+                    </div>
+                </div>
+
+                <!-- Settings Form (shown when unlocked) -->
+                <div id="settingsContent" class="hidden">
+                    <div class="card">
+                        <h2 style="margin-bottom: var(--spacing-lg);">Profile Settings</h2>
+
+                        <form id="settingsForm">
+                            <div class="form-group">
+                                <label class="form-checkbox">
+                                    <input type="checkbox" id="allowAnonUpload" checked>
+                                    <span>Allow public uploads</span>
+                                </label>
+                                <p class="text-muted" style="margin-top: var(--spacing-xs); font-size: 0.85rem;">
+                                    When enabled, anyone visiting your page can create pastes without unlocking.
+                                </p>
+                            </div>
+
+                            <div style="margin-top: var(--spacing-lg);">
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="card" style="margin-top: var(--spacing-md);">
+                        <h2 style="margin-bottom: var(--spacing-md);">Account Info</h2>
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <p id="displayUsername" style="font-weight: 500;"></p>
+                        </div>
+                        <div class="form-group" id="defaultPasswordSection">
+                            <label class="form-label">Default Password</label>
+                            <div class="code-block" id="displayDefaultPassword" style="font-size: 1rem;"></div>
+                            <p class="text-muted" style="margin-top: var(--spacing-xs); font-size: 0.85rem;">
+                                This is your current password for unlocking your profile.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Unlock Modal -->
+    <div class="modal-overlay" id="unlockModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🔓 Unlock Profile</h3>
+                <button class="modal-close" onclick="closeModal('unlockModal')">&times;</button>
+            </div>
+            <form id="unlockForm">
+                <div id="unlockAlert"></div>
+                <div class="form-group">
+                    <label class="form-label">Your Password</label>
+                    <input type="password" class="form-input" id="unlockPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Unlock</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Extract username from URL: /:username/setting
+        const pathParts = window.location.pathname.split('/');
+        const pageUsername = pathParts[1];
+
+        // Update page elements
+        document.getElementById('pageTitle').textContent = `Settings - ${pageUsername} - Pastry`;
+        document.getElementById('headerPath').textContent = `/ ${pageUsername} / setting`;
+        document.getElementById('backToProfile').href = `/${pageUsername}`;
+        document.getElementById('displayUsername').textContent = pageUsername;
+
+        let isUnlocked = false;
+
+        // Check if already has a valid token
+        async function checkAuth() {
+            if (!API.userToken) return;
+
+            try {
+                // Try to load settings to verify token is valid
+                const data = await API.getUserPage(pageUsername);
+                // Token seems valid, unlock the UI
+                unlockUI(data.allowAnonymousUpload);
+            } catch (err) {
+                // Token invalid, clear it
+                API.clearUserToken();
+            }
+        }
+
+        function unlockUI(allowAnonymousUpload, defaultPassword = null) {
+            isUnlocked = true;
+            document.getElementById('lockedState').classList.add('hidden');
+            document.getElementById('settingsContent').classList.remove('hidden');
+            document.getElementById('allowAnonUpload').checked = allowAnonymousUpload;
+
+            if (defaultPassword) {
+                document.getElementById('displayDefaultPassword').textContent = defaultPassword;
+            } else {
+                document.getElementById('defaultPasswordSection').classList.add('hidden');
+            }
+        }
+
+        // Unlock form
+        document.getElementById('unlockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('unlockPassword').value;
+
+            try {
+                const result = await API.unlockUserPage(pageUsername, password);
+                API.setUserToken(result.token);
+
+                unlockUI(
+                    result.user.allow_anonymous_upload,
+                    result.user.default_password
+                );
+
+                closeModal('unlockModal');
+            } catch (err) {
+                showAlert(document.getElementById('unlockAlert'), err.message);
+            }
+        });
+
+        // Settings form
+        document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const allowAnonUpload = document.getElementById('allowAnonUpload').checked;
+
+            try {
+                await API.updateUserSettings(pageUsername, {
+                    allow_anonymous_upload: allowAnonUpload
+                });
+                alert('Settings saved successfully!');
+            } catch (err) {
+                alert('Failed to save settings: ' + err.message);
+            }
+        });
+
+        // Initialize
+        checkAuth();
+    </script>
+</body>
+
+</html>

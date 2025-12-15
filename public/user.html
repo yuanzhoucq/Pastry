@@ -17,13 +17,12 @@
         <header class="header-bar">
             <div class="container">
                 <div class="page-title">
-                    <span class="logo">👤</span>
-                    <h1 id="username">Loading...</h1>
+                    <h1><a href="/" class="header-home">Pastry</a><span id="username" class="header-username"></span>
+                    </h1>
                 </div>
                 <nav class="flex gap-sm items-center">
-                    <a href="/">Home</a>
+                    <a id="settingsLink" class="hidden">⚙️ Settings</a>
                     <button id="unlockBtn">🔓 Unlock</button>
-                    <button id="lockBtn" class="hidden">🔒 Lock</button>
                     <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙</button>
                 </nav>
             </div>
@@ -34,7 +33,7 @@
                 <!-- Main Card with Two Column Layout -->
                 <div class="card">
                     <div class="user-layout">
-                        <!-- Left: Create Paste Section (shown when unlocked) -->
+                        <!-- Left: Create Paste Section -->
                         <div id="createSection" class="hidden">
                             <h2 style="margin-bottom: var(--spacing-lg);">Create New Paste</h2>
 
@@ -189,13 +188,15 @@
     <script>
         const pageUsername = window.location.pathname.slice(1);
         let isUnlocked = false;
+        let allowAnonymousUpload = true;
         let currentPasteId = null;
         let currentPasteType = null;
         let pasteType = 'text';
 
         // Initialize
-        document.getElementById('username').textContent = pageUsername;
+        document.getElementById('username').textContent = `/ ${pageUsername}`;
         document.getElementById('pageTitle').textContent = `${pageUsername} - Pastry`;
+        document.getElementById('settingsLink').href = `/${pageUsername}/setting`;
 
         // Tab switching for paste type
         document.querySelectorAll('.tabs .tab').forEach(tab => {
@@ -263,6 +264,14 @@
                 const data = await API.getUserPage(pageUsername);
                 const container = document.getElementById('pasteListContent');
 
+                // Update allowAnonymousUpload from server
+                allowAnonymousUpload = data.allowAnonymousUpload;
+
+                // Show create section if allowed and not unlocked yet
+                if (allowAnonymousUpload && !isUnlocked) {
+                    document.getElementById('createSection').classList.remove('hidden');
+                }
+
                 if (data.pastes.length === 0) {
                     container.innerHTML = `
             <div class="empty-state">
@@ -315,8 +324,11 @@
                 API.setUserToken(result.token);
                 isUnlocked = true;
 
+                // Update allow_anonymous_upload from unlock response
+                allowAnonymousUpload = result.user.allow_anonymous_upload;
+
                 document.getElementById('unlockBtn').classList.add('hidden');
-                document.getElementById('lockBtn').classList.remove('hidden');
+                document.getElementById('settingsLink').classList.remove('hidden');
                 document.getElementById('createSection').classList.remove('hidden');
 
                 closeModal('unlockModal');
@@ -324,18 +336,6 @@
             } catch (err) {
                 showAlert(document.getElementById('unlockAlert'), err.message);
             }
-        });
-
-        // Lock
-        document.getElementById('lockBtn').addEventListener('click', () => {
-            API.clearUserToken();
-            isUnlocked = false;
-
-            document.getElementById('unlockBtn').classList.remove('hidden');
-            document.getElementById('lockBtn').classList.add('hidden');
-            document.getElementById('createSection').classList.add('hidden');
-
-            loadPastes();
         });
 
         // Create paste
@@ -473,17 +473,31 @@
         // Initialize
         loadPastes();
 
-        // Check if we have a valid user token for this user
-        if (API.userToken) {
+        // Check if we have a valid user token and restore session
+        async function checkSession() {
+            if (!API.userToken) return;
+
             try {
-                // Try to make an authenticated request to verify token
-                fetch('/api/pastes', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${API.userToken}` },
-                    body: new FormData()
-                }).catch(() => { });
-            } catch { }
+                // Try to update settings with no changes - this verifies token AND user ownership
+                await API.updateUserSettings(pageUsername, {});
+
+                // Token is valid and belongs to this user - restore unlocked UI state
+                const userData = await API.getUserPage(pageUsername);
+                isUnlocked = true;
+                allowAnonymousUpload = userData.allowAnonymousUpload;
+
+                document.getElementById('unlockBtn').classList.add('hidden');
+                document.getElementById('settingsLink').classList.remove('hidden');
+                document.getElementById('createSection').classList.remove('hidden');
+
+                loadPastes();
+            } catch (err) {
+                // Token invalid or doesn't belong to this user, clear it
+                API.clearUserToken();
+            }
         }
+
+        checkSession();
     </script>
 </body>
 

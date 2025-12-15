@@ -61,6 +61,18 @@ app.get('/api/homepage', (req, res) => {
     }
 });
 
+// Serve user settings page
+app.get('/:username/setting', (req, res) => {
+    const { username } = req.params;
+
+    // Skip API paths
+    if (username.startsWith('api')) {
+        return res.status(404).send('Not found');
+    }
+
+    res.sendFile(path.join(__dirname, 'public', 'user-settings.html'));
+});
+
 // Serve user pages (must be after API routes)
 app.get('/:username', (req, res) => {
     const { username } = req.params;

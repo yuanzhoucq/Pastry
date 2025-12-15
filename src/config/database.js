@@ -22,6 +22,7 @@ db.exec(`
     password_hash TEXT NOT NULL,
     is_admin INTEGER DEFAULT 0,
     default_password TEXT,
+    allow_anonymous_upload INTEGER DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now'))
   );
 
@@ -74,6 +75,14 @@ for (const [key, value] of Object.entries(defaultSettings)) {
   if (!existing) {
     db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value);
   }
+}
+
+// Migration: Add allow_anonymous_upload column if it doesn't exist
+try {
+  db.prepare('SELECT allow_anonymous_upload FROM users LIMIT 1').get();
+} catch {
+  db.exec('ALTER TABLE users ADD COLUMN allow_anonymous_upload INTEGER DEFAULT 1');
+  console.log('[Migration] Added allow_anonymous_upload column to users table');
 }
 
 // Create admin user if not exists
