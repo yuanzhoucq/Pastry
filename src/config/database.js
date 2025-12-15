@@ -90,8 +90,8 @@ const adminUser = db.prepare('SELECT id FROM users WHERE username = ?').get('adm
 if (!adminUser) {
   const adminPassword = generateWordPassword();
   const passwordHash = bcrypt.hashSync(adminPassword, 10);
-  db.prepare('INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)')
-    .run('admin', passwordHash);
+  db.prepare('INSERT INTO users (username, password_hash, is_admin, default_password) VALUES (?, ?, 1, ?)')
+    .run('admin', passwordHash, adminPassword);
 
   console.log('='.repeat(50));
   console.log('Admin account created:');

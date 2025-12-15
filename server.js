@@ -50,7 +50,6 @@ app.get('/api/homepage', (req, res) => {
       SELECT username, created_at,
         (SELECT COUNT(*) FROM pastes WHERE user_id = users.id AND (expires_at IS NULL OR expires_at > datetime('now'))) as paste_count
       FROM users
-      WHERE is_admin = 0
       ORDER BY created_at DESC
     `).all();
         res.json({ type: 'user_list', users });
@@ -59,6 +58,19 @@ app.get('/api/homepage', (req, res) => {
     } else {
         res.json({ type: 'user_list', users: [] });
     }
+});
+
+// Serve app system pages
+app.get('/app/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'app', 'login.html'));
+});
+
+app.get('/app/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'app', 'admin.html'));
+});
+
+app.get('/app/register', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'app', 'register.html'));
 });
 
 // Serve user settings page

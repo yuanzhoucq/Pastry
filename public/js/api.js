@@ -29,8 +29,18 @@ const API = {
             ...options.headers
         };
 
-        // Use user token for paste operations if available
-        const token = options.useUserToken ? this.userToken : (this.userToken || this.token);
+        // Token selection priority:
+        // - useUserToken: explicitly use user token (for user-specific operations)
+        // - useAdminToken: explicitly use admin token (for admin operations)
+        // - default: prefer user token if available, fall back to admin token
+        let token;
+        if (options.useUserToken) {
+            token = this.userToken;
+        } else if (options.useAdminToken) {
+            token = this.token;
+        } else {
+            token = this.userToken || this.token;
+        }
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
@@ -66,41 +76,43 @@ const API = {
 
     // Admin
     async getUsers() {
-        return this.request('/api/admin/users');
+        return this.request('/api/admin/users', { useAdminToken: true });
     },
 
     async deleteUser(id) {
-        return this.request(`/api/admin/users/${id}`, { method: 'DELETE' });
+        return this.request(`/api/admin/users/${id}`, { method: 'DELETE', useAdminToken: true });
     },
 
     async updateUser(id, data) {
         return this.request(`/api/admin/users/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            useAdminToken: true
         });
     },
 
     async getSettings() {
-        return this.request('/api/admin/settings');
+        return this.request('/api/admin/settings', { useAdminToken: true });
     },
 
     async updateSettings(data) {
         return this.request('/api/admin/settings', {
             method: 'PUT',
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            useAdminToken: true
         });
     },
 
     async createInviteCode() {
-        return this.request('/api/admin/invite-codes', { method: 'POST' });
+        return this.request('/api/admin/invite-codes', { method: 'POST', useAdminToken: true });
     },
 
     async getInviteCodes() {
-        return this.request('/api/admin/invite-codes');
+        return this.request('/api/admin/invite-codes', { useAdminToken: true });
     },
 
     async deleteInviteCode(id) {
-        return this.request(`/api/admin/invite-codes/${id}`, { method: 'DELETE' });
+        return this.request(`/api/admin/invite-codes/${id}`, { method: 'DELETE', useAdminToken: true });
     },
 
     // Users
@@ -213,6 +225,52 @@ function openModal(modalId) {
 
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
+}
+
+// Universal modal for alerts and confirmations
+// Usage: showModal({ title, message, type, onConfirm })
+// type: 'success', 'error', 'confirm', 'info' (default)
+function showModal(options) {
+    const { title = 'Notice', message, type = 'info', onConfirm } = options;
+
+    // Create or get the universal modal
+    let modal = document.getElementById('universalModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'universalModal';
+        modal.innerHTML = `
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 id="universalModalTitle"></h3>
+                    <button class="modal-close" onclick="closeModal('universalModal')">&times;</button>
+                </div>
+                <p id="universalModalMessage"></p>
+                <div id="universalModalActions" style="display: flex; gap: var(--spacing-md); margin-top: var(--spacing-lg);"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    const icons = { success: '✅', error: '❌', confirm: '⚠️', info: 'ℹ️' };
+    document.getElementById('universalModalTitle').textContent = `${icons[type] || ''} ${title}`;
+    document.getElementById('universalModalMessage').textContent = message;
+
+    const actionsDiv = document.getElementById('universalModalActions');
+    if (type === 'confirm' && onConfirm) {
+        actionsDiv.innerHTML = `
+            <button class="btn" style="flex: 1;" onclick="closeModal('universalModal')">Cancel</button>
+            <button class="btn btn-danger" style="flex: 1;" id="universalModalConfirmBtn">Confirm</button>
+        `;
+        document.getElementById('universalModalConfirmBtn').onclick = () => {
+            closeModal('universalModal');
+            onConfirm();
+        };
+    } else {
+        actionsDiv.innerHTML = `<button class="btn btn-primary" style="flex: 1;" onclick="closeModal('universalModal')">OK</button>`;
+    }
+
+    openModal('universalModal');
 }
 
 // Close modal on overlay click

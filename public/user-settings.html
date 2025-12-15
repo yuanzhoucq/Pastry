@@ -22,7 +22,7 @@
                 </div>
                 <nav class="flex gap-sm items-center">
                     <a id="backToProfile">← Back</a>
-                    <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙</button>
+                    <button id="themeToggle" class="theme-toggle" title="Toggle theme"></button>
                 </nav>
             </div>
         </header>
@@ -171,9 +171,9 @@
                 await API.updateUserSettings(pageUsername, {
                     allow_anonymous_upload: allowAnonUpload
                 });
-                alert('Settings saved successfully!');
+                showModal({ title: 'Success', message: 'Settings saved successfully!', type: 'success' });
             } catch (err) {
-                alert('Failed to save settings: ' + err.message);
+                showModal({ title: 'Error', message: 'Failed to save settings: ' + err.message, type: 'error' });
             }
         });
 

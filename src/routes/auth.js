@@ -54,8 +54,8 @@ router.post('/register', (req, res) => {
         return res.status(400).json({ error: 'Username must be 3-30 characters, alphanumeric, dash, or underscore only' });
     }
 
-    // Check reserved usernames
-    const reserved = ['admin', 'api', 'static', 'public', 'register', 'login'];
+    // Check reserved usernames - 'app' prefix is reserved for system routes
+    const reserved = ['app'];
     if (reserved.includes(username.toLowerCase())) {
         return res.status(400).json({ error: 'This username is reserved' });
     }

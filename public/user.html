@@ -21,9 +21,10 @@
                     </h1>
                 </div>
                 <nav class="flex gap-sm items-center">
-                    <a id="settingsLink" class="hidden">⚙️ Settings</a>
+                    <a id="adminLink" href="/app/admin" class="hidden"> Admin Panel</a>
+                    <a id="settingsLink" class="hidden"> Settings</a>
                     <button id="unlockBtn">🔓 Unlock</button>
-                    <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙</button>
+                    <button id="themeToggle" class="theme-toggle" title="Toggle theme"></button>
                 </nav>
             </div>
         </header>
@@ -219,6 +220,21 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🗑️ Delete Paste</h3>
+                <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+            </div>
+            <p>Are you sure you want to delete this paste? This action cannot be undone.</p>
+            <div style="display: flex; gap: var(--spacing-md); margin-top: var(--spacing-lg);">
+                <button class="btn" style="flex: 1;" onclick="closeModal('deleteModal')">Cancel</button>
+                <button class="btn btn-danger" style="flex: 1;" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/api.js"></script>
     <script>
         const pageUsername = window.location.pathname.slice(1);
@@ -232,6 +248,11 @@
         document.getElementById('username').textContent = `/ ${pageUsername}`;
         document.getElementById('pageTitle').textContent = `${pageUsername} - Pastry`;
         document.getElementById('settingsLink').href = `/${pageUsername}/setting`;
+
+        // Show admin panel link if viewing admin user's page
+        if (pageUsername === 'admin') {
+            document.getElementById('adminLink').classList.remove('hidden');
+        }
 
         // Tab switching for paste type
         document.querySelectorAll('.tabs .tab').forEach(tab => {
@@ -445,14 +466,14 @@
             if (pasteType === 'text') {
                 const content = document.getElementById('pasteContent').value;
                 if (!content.trim()) {
-                    alert('Please enter some content');
+                    showModal({ title: 'Validation Error', message: 'Please enter some content', type: 'error' });
                     return;
                 }
                 formData.append('content', content);
             } else {
                 const file = document.getElementById('pasteFile').files[0];
                 if (!file) {
-                    alert('Please select a file');
+                    showModal({ title: 'Validation Error', message: 'Please select a file', type: 'error' });
                     return;
                 }
                 formData.append('file', file);
@@ -504,7 +525,7 @@
 
                 loadPastes();
             } catch (err) {
-                alert('Failed to create paste: ' + err.message);
+                showModal({ title: 'Error', message: 'Failed to create paste: ' + err.message, type: 'error' });
             }
         });
 
@@ -572,16 +593,27 @@
         }
 
         // Delete paste
-        async function deletePaste(id) {
-            if (!confirm('Delete this paste?')) return;
+        let pendingDeleteId = null;
+
+        function deletePaste(id) {
+            pendingDeleteId = id;
+            openModal('deleteModal');
+        }
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+            if (!pendingDeleteId) return;
 
             try {
-                await API.deletePaste(id);
+                await API.deletePaste(pendingDeleteId);
+                closeModal('deleteModal');
                 loadPastes();
             } catch (err) {
-                alert('Failed to delete: ' + err.message);
+                closeModal('deleteModal');
+                showModal({ title: 'Error', message: 'Failed to delete: ' + err.message, type: 'error' });
+            } finally {
+                pendingDeleteId = null;
             }
-        }
+        });
 
         // Initialize
         loadPastes();

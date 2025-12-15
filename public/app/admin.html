@@ -17,13 +17,13 @@
         <header class="header-bar">
             <div class="container">
                 <div class="page-title">
-                    <span class="logo">⚙️</span>
+                    <span class="logo"></span>
                     <h1>Admin Panel</h1>
                 </div>
                 <nav class="flex gap-sm items-center">
                     <a href="/">Home</a>
                     <button id="logoutBtn">Logout</button>
-                    <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙</button>
+                    <button id="themeToggle" class="theme-toggle" title="Toggle theme"></button>
                 </nav>
             </div>
         </header>
@@ -148,7 +148,7 @@
     <script>
         // Check authentication
         if (!API.token) {
-            window.location.href = '/admin-login.html';
+            window.location.href = '/app/login';
         }
 
         // Tab switching
@@ -241,10 +241,10 @@
         document.getElementById('generateInviteBtn').addEventListener('click', async () => {
             try {
                 const result = await API.createInviteCode();
-                alert(`New invite code: ${result.code}`);
+                showModal({ title: 'Invite Code Generated', message: `New invite code: ${result.code}`, type: 'success' });
                 loadInviteCodes();
             } catch (err) {
-                alert('Failed to generate code: ' + err.message);
+                showModal({ title: 'Error', message: 'Failed to generate code: ' + err.message, type: 'error' });
             }
         });
 
@@ -260,48 +260,63 @@
                     max_file_size_mb: document.getElementById('max_file_size_mb').value
                 });
 
-                alert('Settings saved successfully!');
+                showModal({ title: 'Success', message: 'Settings saved successfully!', type: 'success' });
             } catch (err) {
-                alert('Failed to save settings: ' + err.message);
+                showModal({ title: 'Error', message: 'Failed to save settings: ' + err.message, type: 'error' });
             }
         });
 
         // Reset password
         async function resetPassword(userId) {
-            if (!confirm('Reset this user\'s password?')) return;
-
-            try {
-                const result = await API.updateUser(userId, { resetPassword: true });
-                document.getElementById('newPasswordDisplay').textContent = result.newPassword;
-                openModal('passwordModal');
-                loadUsers();
-            } catch (err) {
-                alert('Failed to reset password: ' + err.message);
-            }
+            showModal({
+                title: 'Reset Password',
+                message: 'Reset this user\'s password?',
+                type: 'confirm',
+                onConfirm: async () => {
+                    try {
+                        const result = await API.updateUser(userId, { resetPassword: true });
+                        document.getElementById('newPasswordDisplay').textContent = result.newPassword;
+                        openModal('passwordModal');
+                        loadUsers();
+                    } catch (err) {
+                        showModal({ title: 'Error', message: 'Failed to reset password: ' + err.message, type: 'error' });
+                    }
+                }
+            });
         }
 
         // Delete user
-        async function deleteUser(userId) {
-            if (!confirm('Delete this user and all their pastes?')) return;
-
-            try {
-                await API.deleteUser(userId);
-                loadUsers();
-            } catch (err) {
-                alert('Failed to delete user: ' + err.message);
-            }
+        function deleteUser(userId) {
+            showModal({
+                title: 'Delete User',
+                message: 'Delete this user and all their pastes?',
+                type: 'confirm',
+                onConfirm: async () => {
+                    try {
+                        await API.deleteUser(userId);
+                        loadUsers();
+                    } catch (err) {
+                        showModal({ title: 'Error', message: 'Failed to delete user: ' + err.message, type: 'error' });
+                    }
+                }
+            });
         }
 
         // Delete invite code
-        async function deleteInviteCode(codeId) {
-            if (!confirm('Delete this invite code?')) return;
-
-            try {
-                await API.deleteInviteCode(codeId);
-                loadInviteCodes();
-            } catch (err) {
-                alert('Failed to delete code: ' + err.message);
-            }
+        function deleteInviteCode(codeId) {
+            showModal({
+                title: 'Delete Invite Code',
+                message: 'Delete this invite code?',
+                type: 'confirm',
+                onConfirm: async () => {
+                    try {
+                        await API.deleteInviteCode(codeId);
+                        loadInviteCodes();
+                    } catch (err) {
+                        showModal({ title: 'Error', message: 'Failed to delete code: ' + err.message, type: 'error' });
+                    }
+                }
+            });
         }
 
         // Logout
