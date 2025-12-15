@@ -7,121 +7,127 @@
     <title>Admin Panel - Pastry</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/theme.js"></script>
 </head>
 
 <body>
     <div class="page">
-        <div class="container">
-            <header class="page-header">
+        <header class="header-bar">
+            <div class="container">
                 <div class="page-title">
                     <span class="logo">⚙️</span>
                     <h1>Admin Panel</h1>
                 </div>
-                <nav class="flex gap-md">
-                    <a href="/" class="btn btn-secondary">Home</a>
-                    <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+                <nav class="flex gap-sm items-center">
+                    <a href="/">Home</a>
+                    <button id="logoutBtn">Logout</button>
+                    <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙</button>
                 </nav>
-            </header>
-
-            <!-- Tabs -->
-            <div class="tabs">
-                <button class="tab active" data-tab="users">Users</button>
-                <button class="tab" data-tab="invites">Invite Codes</button>
-                <button class="tab" data-tab="settings">Settings</button>
             </div>
+        </header>
 
-            <!-- Users Tab -->
-            <div id="users-tab" class="tab-content active">
-                <div class="card">
-                    <div class="card-header">
-                        <h2>Users</h2>
-                    </div>
-                    <div class="table-wrapper">
-                        <table class="table" id="usersTable">
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Pastes</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+        <main class="main-content">
+            <div class="container">
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-tab="users">Users</button>
+                    <button class="tab" data-tab="invites">Invite Codes</button>
+                    <button class="tab" data-tab="settings">Settings</button>
+                </div>
+
+                <!-- Users Tab -->
+                <div id="users-tab" class="tab-content active">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Users</h2>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Pastes</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Invite Codes Tab -->
-            <div id="invites-tab" class="tab-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h2>Invite Codes</h2>
-                        <button id="generateInviteBtn" class="btn btn-primary btn-sm">+ Generate Code</button>
-                    </div>
-                    <div class="table-wrapper">
-                        <table class="table" id="invitesTable">
-                            <thead>
-                                <tr>
-                                    <th>Code</th>
-                                    <th>Created By</th>
-                                    <th>Created</th>
-                                    <th>Used By</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                <!-- Invite Codes Tab -->
+                <div id="invites-tab" class="tab-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Invite Codes</h2>
+                            <button id="generateInviteBtn" class="btn btn-primary btn-sm">+ Generate Code</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="table" id="invitesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Created By</th>
+                                        <th>Created</th>
+                                        <th>Used By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Settings Tab -->
-            <div id="settings-tab" class="tab-content">
-                <div class="card">
-                    <h2 style="margin-bottom: var(--spacing-lg);">Site Settings</h2>
+                <!-- Settings Tab -->
+                <div id="settings-tab" class="tab-content">
+                    <div class="card">
+                        <h2 style="margin-bottom: var(--spacing-lg);">Site Settings</h2>
 
-                    <form id="settingsForm">
-                        <div class="form-group">
-                            <label class="form-label">Homepage Type</label>
-                            <div class="form-radio-group">
-                                <label class="form-radio">
-                                    <input type="radio" name="homepage_type" value="user_list" checked>
-                                    <span>User List</span>
-                                </label>
-                                <label class="form-radio">
-                                    <input type="radio" name="homepage_type" value="user_page">
-                                    <span>Specific User's Page</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group" id="homepageUserGroup" style="display: none;">
-                            <label class="form-label">Homepage User</label>
-                            <input type="text" class="form-input" id="homepage_user" placeholder="Username">
-                        </div>
-
-                        <div class="form-row">
+                        <form id="settingsForm">
                             <div class="form-group">
-                                <label class="form-label">Max Expiration (days)</label>
-                                <input type="number" class="form-input" id="max_expiration_days" min="1" max="365"
-                                    value="30">
+                                <label class="form-label">Homepage Type</label>
+                                <div class="form-radio-group">
+                                    <label class="form-radio">
+                                        <input type="radio" name="homepage_type" value="user_list" checked>
+                                        <span>User List</span>
+                                    </label>
+                                    <label class="form-radio">
+                                        <input type="radio" name="homepage_type" value="user_page">
+                                        <span>Specific User's Page</span>
+                                    </label>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label class="form-label">Max File Size (MB)</label>
-                                <input type="number" class="form-input" id="max_file_size_mb" min="1" max="100"
-                                    value="10">
+                            <div class="form-group" id="homepageUserGroup" style="display: none;">
+                                <label class="form-label">Homepage User</label>
+                                <input type="text" class="form-input" id="homepage_user" placeholder="Username">
                             </div>
-                        </div>
 
-                        <button type="submit" class="btn btn-primary">Save Settings</button>
-                    </form>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Max Expiration (days)</label>
+                                    <input type="number" class="form-input" id="max_expiration_days" min="1" max="365"
+                                        value="30">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Max File Size (MB)</label>
+                                    <input type="number" class="form-input" id="max_file_size_mb" min="1" max="100"
+                                        value="10">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <!-- New Password Modal -->

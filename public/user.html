@@ -7,111 +7,119 @@
     <title id="pageTitle">User - Pastry</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/theme.js"></script>
 </head>
 
 <body>
     <div class="page">
-        <div class="container">
-            <header class="page-header">
+        <header class="header-bar">
+            <div class="container">
                 <div class="page-title">
                     <span class="logo">👤</span>
                     <h1 id="username">Loading...</h1>
                 </div>
-                <nav class="flex gap-md">
-                    <a href="/" class="btn btn-secondary">Home</a>
-                    <button id="unlockBtn" class="btn btn-primary">🔓 Unlock</button>
-                    <button id="lockBtn" class="btn btn-secondary hidden">🔒 Lock</button>
+                <nav class="flex gap-sm items-center">
+                    <a href="/">Home</a>
+                    <button id="unlockBtn">🔓 Unlock</button>
+                    <button id="lockBtn" class="hidden">🔒 Lock</button>
+                    <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙</button>
                 </nav>
-            </header>
+            </div>
+        </header>
 
-            <!-- Create Paste Section (shown when unlocked) -->
-            <div id="createSection" class="hidden" style="margin-bottom: var(--spacing-xl);">
+        <main class="main-content">
+            <div class="container">
+                <!-- Main Card with Two Column Layout -->
                 <div class="card">
-                    <h2 style="margin-bottom: var(--spacing-lg);">Create New Paste</h2>
+                    <div class="user-layout">
+                        <!-- Left: Create Paste Section (shown when unlocked) -->
+                        <div id="createSection" class="hidden">
+                            <h2 style="margin-bottom: var(--spacing-lg);">Create New Paste</h2>
 
-                    <div class="tabs" style="border-bottom: none; margin-bottom: var(--spacing-md);">
-                        <button class="tab active" data-type="text">📝 Text</button>
-                        <button class="tab" data-type="file">📁 File</button>
+                            <div class="tabs" style="border-bottom: none; margin-bottom: var(--spacing-md);">
+                                <button class="tab active" data-type="text">📝 Text</button>
+                                <button class="tab" data-type="file">📁 File</button>
+                            </div>
+
+                            <form id="createPasteForm">
+                                <!-- Text Input -->
+                                <div id="textInput" class="form-group">
+                                    <textarea class="form-textarea" id="pasteContent"
+                                        placeholder="Paste your content here..."></textarea>
+                                </div>
+
+                                <!-- File Input -->
+                                <div id="fileInput" class="form-group hidden">
+                                    <div class="file-upload" id="dropZone">
+                                        <div class="file-upload-icon">📤</div>
+                                        <p class="file-upload-text">Drag & drop a file or click to browse</p>
+                                        <input type="file" id="pasteFile">
+                                    </div>
+                                    <div id="selectedFile" class="hidden" style="margin-top: var(--spacing-md);"></div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Name (optional)</label>
+                                        <input type="text" class="form-input" id="pasteName"
+                                            placeholder="Leave empty for random">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">Expires in (days)</label>
+                                        <input type="number" class="form-input" id="pasteExpires" min="0"
+                                            placeholder="0 = never">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Password Protection</label>
+                                    <div class="form-radio-group">
+                                        <label class="form-radio">
+                                            <input type="radio" name="passwordOption" value="none" checked>
+                                            <span>None (public)</span>
+                                        </label>
+                                        <label class="form-radio">
+                                            <input type="radio" name="passwordOption" value="default">
+                                            <span>Default</span>
+                                        </label>
+                                        <label class="form-radio">
+                                            <input type="radio" name="passwordOption" value="random">
+                                            <span>Random</span>
+                                        </label>
+                                        <label class="form-radio">
+                                            <input type="radio" name="passwordOption" value="custom">
+                                            <span>Custom</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group hidden" id="customPasswordGroup">
+                                    <label class="form-label">Custom Password</label>
+                                    <input type="text" class="form-input" id="customPassword"
+                                        placeholder="Enter password">
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">Create Paste</button>
+                            </form>
+                        </div>
+
+                        <!-- Right: Paste List -->
+                        <div id="pasteList">
+                            <h2 style="margin-bottom: var(--spacing-md);">Pastes</h2>
+                            <div id="pasteListContent" class="paste-list-simple">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">📭</div>
+                                    <p>Loading...</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-
-                    <form id="createPasteForm">
-                        <!-- Text Input -->
-                        <div id="textInput" class="form-group">
-                            <textarea class="form-textarea" id="pasteContent"
-                                placeholder="Paste your content here..."></textarea>
-                        </div>
-
-                        <!-- File Input -->
-                        <div id="fileInput" class="form-group hidden">
-                            <div class="file-upload" id="dropZone">
-                                <div class="file-upload-icon">📤</div>
-                                <p class="file-upload-text">Drag & drop a file or click to browse</p>
-                                <input type="file" id="pasteFile">
-                            </div>
-                            <div id="selectedFile" class="hidden" style="margin-top: var(--spacing-md);"></div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Name (optional)</label>
-                                <input type="text" class="form-input" id="pasteName"
-                                    placeholder="Leave empty for random">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Expires in (days)</label>
-                                <input type="number" class="form-input" id="pasteExpires" min="0"
-                                    placeholder="0 = never">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Password Protection</label>
-                            <div class="form-radio-group">
-                                <label class="form-radio">
-                                    <input type="radio" name="passwordOption" value="none" checked>
-                                    <span>None (public)</span>
-                                </label>
-                                <label class="form-radio">
-                                    <input type="radio" name="passwordOption" value="default">
-                                    <span>Default</span>
-                                </label>
-                                <label class="form-radio">
-                                    <input type="radio" name="passwordOption" value="random">
-                                    <span>Random</span>
-                                </label>
-                                <label class="form-radio">
-                                    <input type="radio" name="passwordOption" value="custom">
-                                    <span>Custom</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group hidden" id="customPasswordGroup">
-                            <label class="form-label">Custom Password</label>
-                            <input type="text" class="form-input" id="customPassword" placeholder="Enter password">
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">Create Paste</button>
-                    </form>
                 </div>
             </div>
-
-            <!-- Paste List -->
-            <div id="pasteList">
-                <h2 style="margin-bottom: var(--spacing-lg);">Pastes</h2>
-                <div id="pasteListContent" class="paste-list">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📭</div>
-                        <p>Loading...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </main>
     </div>
 
     <!-- Unlock Modal -->
