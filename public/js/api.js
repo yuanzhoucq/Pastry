@@ -165,7 +165,9 @@ function formatSize(bytes) {
 }
 
 function formatDate(dateStr) {
-    const date = new Date(dateStr);
+    // SQLite stores datetime('now') as UTC without timezone indicator
+    // Append 'Z' to indicate UTC so JavaScript parses it correctly
+    const date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
     const now = new Date();
     const diff = now - date;
 
