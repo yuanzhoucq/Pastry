@@ -179,6 +179,16 @@ function formatDate(dateStr) {
     const now = new Date();
     const diff = now - date;
 
+    // Future date (expiration)
+    if (diff < 0) {
+        const futureDiff = -diff;
+        if (futureDiff < 3600000) return `in ${Math.ceil(futureDiff / 60000)}m`;
+        if (futureDiff < 86400000) return `in ${Math.ceil(futureDiff / 3600000)}h`;
+        if (futureDiff < 604800000) return `in ${Math.ceil(futureDiff / 86400000)}d`;
+        return date.toLocaleDateString();
+    }
+
+    // Past date (created)
     if (diff < 60000) return 'just now';
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;

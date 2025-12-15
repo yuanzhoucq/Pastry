@@ -91,15 +91,28 @@ router.post('/', upload.single('file'), (req, res) => {
 
     // Generate paste ID and name
     const id = uuidv4().slice(0, 8);
-    const pasteName = name || generateWordPassword();
+
+    // Generate friendly default name: "Text Dec 15 18:04" or "File Dec 15 18:04"
+    let pasteName = name;
+    if (!pasteName) {
+        const now = new Date();
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = months[now.getMonth()];
+        const day = now.getDate();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const typeLabel = type === 'file' ? 'File' : 'Text';
+        pasteName = `${typeLabel} ${month} ${day} ${hours}:${minutes}`;
+    }
 
     // Calculate expiration
     let expiresAt = null;
     if (expiresIn) {
-        const days = parseInt(expiresIn);
+        const days = parseFloat(expiresIn);
         if (days > 0 && days <= maxExpirationDays) {
             const expirationDate = new Date();
-            expirationDate.setDate(expirationDate.getDate() + days);
+            // Support fractional days (e.g., 0.0416667 for 1 hour)
+            expirationDate.setTime(expirationDate.getTime() + days * 24 * 60 * 60 * 1000);
             expiresAt = expirationDate.toISOString();
         } else if (days > maxExpirationDays) {
             if (file) fs.unlinkSync(file.path);

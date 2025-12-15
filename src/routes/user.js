@@ -15,8 +15,8 @@ router.get('/:username', (req, res) => {
     }
 
     // Get pastes (only public metadata)
-    const pastes = db.prepare(`
-    SELECT id, name, type, size, created_at, expires_at,
+    const rawPastes = db.prepare(`
+    SELECT id, name, type, size, content, created_at, expires_at,
       CASE WHEN password_hash IS NULL THEN 0 ELSE 1 END as has_password
     FROM pastes 
     WHERE user_id = ? 
@@ -24,13 +24,41 @@ router.get('/:username', (req, res) => {
     ORDER BY created_at DESC
   `).all(user.id);
 
+    // Calculate word count for text pastes (supporting Chinese)
+    const pastes = rawPastes.map(paste => {
+        const result = {
+            id: paste.id,
+            name: paste.name,
+            type: paste.type,
+            size: paste.size,
+            created_at: paste.created_at,
+            expires_at: paste.expires_at,
+            has_password: paste.has_password
+        };
+
+        if (paste.type === 'text' && paste.content) {
+            // Count words: split by whitespace for English, count characters for CJK
+            const content = paste.content.trim();
+            // Match CJK characters and non-whitespace sequences
+            const matches = content.match(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]|[^\s]+/g);
+            result.word_count = matches ? matches.length : 0;
+        }
+
+        return result;
+    });
+
+    // Get max expiration setting
+    const maxExpirationSetting = db.prepare('SELECT value FROM settings WHERE key = ?').get('max_expiration_days');
+    const maxExpirationDays = maxExpirationSetting ? parseInt(maxExpirationSetting.value) : 30;
+
     res.json({
         user: {
             username: user.username,
             created_at: user.created_at
         },
         pastes,
-        allowAnonymousUpload: user.allow_anonymous_upload === 1
+        allowAnonymousUpload: user.allow_anonymous_upload === 1,
+        maxExpirationDays
     });
 });
 

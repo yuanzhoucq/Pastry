@@ -59,17 +59,52 @@
                                     <div id="selectedFile" class="hidden" style="margin-top: var(--spacing-md);"></div>
                                 </div>
 
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label">Name (optional)</label>
-                                        <input type="text" class="form-input" id="pasteName"
-                                            placeholder="Leave empty for random">
+                                <div class="form-group">
+                                    <label class="form-label">Paste Name</label>
+                                    <div class="form-radio-group">
+                                        <label class="form-radio" id="nameFilenameOption" style="display: none;">
+                                            <input type="radio" name="nameOption" value="filename">
+                                            <span>Use Filename</span>
+                                        </label>
+                                        <label class="form-radio">
+                                            <input type="radio" name="nameOption" value="random" checked>
+                                            <span>Automatic</span>
+                                        </label>
+                                        <label class="form-radio">
+                                            <input type="radio" name="nameOption" value="custom">
+                                            <span>Custom</span>
+                                        </label>
                                     </div>
+                                </div>
 
-                                    <div class="form-group">
-                                        <label class="form-label">Expires in (days)</label>
-                                        <input type="number" class="form-input" id="pasteExpires" min="0"
-                                            placeholder="0 = never">
+                                <div class="form-group hidden" id="customNameGroup">
+                                    <label class="form-label">Custom Name</label>
+                                    <input type="text" class="form-input" id="pasteName" placeholder="Enter paste name">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Expiration</label>
+                                    <div class="form-radio-group" id="expirationOptions">
+                                        <label class="form-radio" data-days="0.0416667">
+                                            <input type="radio" name="expirationOption" value="0.0416667" checked>
+                                            <span>1 Hour</span>
+                                        </label>
+                                        <label class="form-radio" data-days="1">
+                                            <input type="radio" name="expirationOption" value="1">
+                                            <span>1 Day</span>
+                                        </label>
+                                        <label class="form-radio" data-days="7">
+                                            <input type="radio" name="expirationOption" value="7">
+                                            <span>7 Days</span>
+                                        </label>
+                                        <label class="form-radio" data-days="30">
+                                            <input type="radio" name="expirationOption" value="30">
+                                            <span>30 Days</span>
+                                        </label>
+                                        <label class="form-radio" data-days="365">
+                                            <input type="radio" name="expirationOption" value="365">
+                                            <span>1 Year</span>
+                                        </label>
                                     </div>
                                 </div>
 
@@ -207,6 +242,16 @@
 
                 document.getElementById('textInput').classList.toggle('hidden', pasteType !== 'text');
                 document.getElementById('fileInput').classList.toggle('hidden', pasteType !== 'file');
+
+                // Show/hide filename option based on paste type
+                updateNameOptions();
+            });
+        });
+
+        // Name option toggle
+        document.querySelectorAll('input[name="nameOption"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('customNameGroup').classList.toggle('hidden', radio.value !== 'custom');
             });
         });
 
@@ -253,9 +298,59 @@
             📎 ${file.name} (${formatSize(file.size)})
           </div>
         `;
+                // Update name options when file is selected
+                updateNameOptions();
             } else {
                 display.classList.add('hidden');
+                updateNameOptions();
             }
+        }
+
+        // Update name options based on paste type and file selection
+        function updateNameOptions() {
+            const filenameOption = document.getElementById('nameFilenameOption');
+            const filenameRadio = filenameOption.querySelector('input');
+            const hasFile = pasteType === 'file' && fileInput.files.length > 0;
+
+            if (hasFile) {
+                filenameOption.style.display = '';
+                // Select filename option by default when file is selected
+                filenameRadio.checked = true;
+                document.getElementById('customNameGroup').classList.add('hidden');
+            } else {
+                filenameOption.style.display = 'none';
+                // If filename was selected, switch to random
+                if (filenameRadio.checked) {
+                    document.querySelector('input[name="nameOption"][value="random"]').checked = true;
+                }
+            }
+        }
+
+        // Update expiration options based on admin max setting
+        function updateExpirationOptions(maxDays) {
+            const container = document.getElementById('expirationOptions');
+            const options = container.querySelectorAll('.form-radio');
+
+            let firstVisibleChecked = false;
+            options.forEach(option => {
+                const days = parseFloat(option.dataset.days);
+                const radio = option.querySelector('input');
+
+                if (days <= maxDays) {
+                    option.style.display = '';
+                    // Check first visible option if current selection is hidden
+                    if (!firstVisibleChecked) {
+                        const currentChecked = container.querySelector('input:checked');
+                        if (!currentChecked || currentChecked.closest('.form-radio').style.display === 'none') {
+                            radio.checked = true;
+                        }
+                        firstVisibleChecked = true;
+                    }
+                } else {
+                    option.style.display = 'none';
+                    radio.checked = false;
+                }
+            });
         }
 
         // Load pastes
@@ -266,6 +361,9 @@
 
                 // Update allowAnonymousUpload from server
                 allowAnonymousUpload = data.allowAnonymousUpload;
+
+                // Update expiration options based on max setting
+                updateExpirationOptions(data.maxExpirationDays);
 
                 // Show create section if allowed and not unlocked yet
                 if (allowAnonymousUpload && !isUnlocked) {
@@ -292,7 +390,7 @@
               </div>
               <div class="paste-meta">
                 <span>${formatDate(paste.created_at)}</span>
-                <span>${formatSize(paste.size)}</span>
+                <span>${paste.type === 'text' && paste.word_count !== undefined ? paste.word_count + ' words' : formatSize(paste.size)}</span>
                 ${paste.expires_at ? `<span>Expires ${formatDate(paste.expires_at)}</span>` : ''}
               </div>
             </div>
@@ -360,11 +458,24 @@
                 formData.append('file', file);
             }
 
-            const name = document.getElementById('pasteName').value.trim();
-            if (name) formData.append('name', name);
+            // Handle name option
+            const nameOption = document.querySelector('input[name="nameOption"]:checked').value;
+            if (nameOption === 'custom') {
+                const customName = document.getElementById('pasteName').value.trim();
+                if (customName) formData.append('name', customName);
+            } else if (nameOption === 'filename' && pasteType === 'file') {
+                const file = document.getElementById('pasteFile').files[0];
+                if (file) {
+                    // Remove extension for the paste name
+                    const fileName = file.name.replace(/\.[^/.]+$/, '');
+                    formData.append('name', fileName);
+                }
+            }
+            // For 'random', don't send name - server will generate
 
-            const expires = document.getElementById('pasteExpires').value;
-            if (expires && parseInt(expires) > 0) {
+            const expirationRadio = document.querySelector('input[name="expirationOption"]:checked');
+            const expires = expirationRadio ? expirationRadio.value : '0.0416667';
+            if (parseFloat(expires) > 0) {
                 formData.append('expiresIn', expires);
             }
 
@@ -387,7 +498,9 @@
                 // Reset form
                 document.getElementById('createPasteForm').reset();
                 document.getElementById('selectedFile').classList.add('hidden');
+                document.getElementById('customNameGroup').classList.add('hidden');
                 document.getElementById('customPasswordGroup').classList.add('hidden');
+                updateNameOptions();
 
                 loadPastes();
             } catch (err) {
