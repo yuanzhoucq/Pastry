@@ -50,16 +50,24 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     code TEXT UNIQUE NOT NULL,
     created_by INTEGER NOT NULL,
-    used_by INTEGER,
+    disabled INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
-    used_at TEXT,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (used_by) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS invite_code_uses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invite_code_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    used_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (invite_code_id) REFERENCES invite_codes(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
   CREATE INDEX IF NOT EXISTS idx_pastes_user_id ON pastes(user_id);
   CREATE INDEX IF NOT EXISTS idx_pastes_expires_at ON pastes(expires_at);
   CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code);
+  CREATE INDEX IF NOT EXISTS idx_invite_code_uses_code_id ON invite_code_uses(invite_code_id);
 `);
 
 // Initialize default settings
@@ -83,6 +91,32 @@ try {
 } catch {
   db.exec('ALTER TABLE users ADD COLUMN allow_anonymous_upload INTEGER DEFAULT 1');
   console.log('[Migration] Added allow_anonymous_upload column to users table');
+}
+
+// Migration: Add disabled column to invite_codes if it doesn't exist
+try {
+  db.prepare('SELECT disabled FROM invite_codes LIMIT 1').get();
+} catch {
+  db.exec('ALTER TABLE invite_codes ADD COLUMN disabled INTEGER DEFAULT 0');
+  console.log('[Migration] Added disabled column to invite_codes table');
+}
+
+// Migration: Migrate used_by data to invite_code_uses table
+try {
+  const hasUsedBy = db.prepare("SELECT name FROM pragma_table_info('invite_codes') WHERE name = 'used_by'").get();
+  if (hasUsedBy) {
+    // Migrate existing usage data
+    const usedCodes = db.prepare('SELECT id, used_by, used_at FROM invite_codes WHERE used_by IS NOT NULL').all();
+    for (const code of usedCodes) {
+      const existing = db.prepare('SELECT id FROM invite_code_uses WHERE invite_code_id = ? AND user_id = ?').get(code.id, code.used_by);
+      if (!existing) {
+        db.prepare("INSERT INTO invite_code_uses (invite_code_id, user_id, used_at) VALUES (?, ?, ?)").run(code.id, code.used_by, code.used_at || new Date().toISOString());
+      }
+    }
+    console.log(`[Migration] Migrated ${usedCodes.length} invite code usage records`);
+  }
+} catch (err) {
+  // Table might not have used_by column in new installs, that's fine
 }
 
 // Create admin user if not exists

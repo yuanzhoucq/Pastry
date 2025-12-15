@@ -115,6 +115,14 @@ const API = {
         return this.request(`/api/admin/invite-codes/${id}`, { method: 'DELETE', useAdminToken: true });
     },
 
+    async toggleInviteCode(id, disabled) {
+        return this.request(`/api/admin/invite-codes/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ disabled }),
+            useAdminToken: true
+        });
+    },
+
     // Users
     async getUserPage(username) {
         return this.request(`/api/users/${username}`);

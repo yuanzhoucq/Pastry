@@ -73,6 +73,7 @@
                                         <th>Code</th>
                                         <th>Created By</th>
                                         <th>Created</th>
+                                        <th>Status</th>
                                         <th>Used By</th>
                                         <th>Actions</th>
                                     </tr>
@@ -207,10 +208,19 @@
             <td><code>${code.code}</code></td>
             <td>${code.created_by}</td>
             <td>${formatDate(code.created_at)}</td>
-            <td>${code.used_by || '-'}</td>
             <td>
-              ${!code.used_by ? `<button class="btn btn-danger btn-sm" onclick="deleteInviteCode(${code.id})">Delete</button>` :
-                        `<span class="badge badge-success">Used</span>`}
+              ${code.disabled
+                        ? '<span class="badge badge-error">Disabled</span>'
+                        : '<span class="badge badge-success">Active</span>'}
+            </td>
+            <td>${code.used_by.length > 0 ? code.used_by.join(', ') : '-'}</td>
+            <td>
+              <div class="flex gap-sm">
+                <button class="btn btn-secondary btn-sm" onclick="toggleInviteCode(${code.id}, ${!code.disabled})">
+                  ${code.disabled ? 'Enable' : 'Disable'}
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="deleteInviteCode(${code.id})">Delete</button>
+              </div>
             </td>
           </tr>
         `).join('');
@@ -300,6 +310,16 @@
                     }
                 }
             });
+        }
+
+        // Toggle invite code (enable/disable)
+        async function toggleInviteCode(codeId, disabled) {
+            try {
+                await API.toggleInviteCode(codeId, disabled);
+                loadInviteCodes();
+            } catch (err) {
+                showModal({ title: 'Error', message: 'Failed to toggle code: ' + err.message, type: 'error' });
+            }
         }
 
         // Delete invite code

@@ -66,21 +66,22 @@ router.post('/register', (req, res) => {
         return res.status(400).json({ error: 'Username already taken' });
     }
 
-    // Validate invite code
-    const invite = db.prepare('SELECT * FROM invite_codes WHERE code = ? AND used_by IS NULL').get(inviteCode);
+    // Validate invite code (must exist and not be disabled)
+    const invite = db.prepare('SELECT * FROM invite_codes WHERE code = ? AND disabled = 0').get(inviteCode);
     if (!invite) {
-        return res.status(400).json({ error: 'Invalid or already used invite code' });
+        return res.status(400).json({ error: 'Invalid or disabled invite code' });
     }
 
-    // Create user and mark invite code as used in a transaction
+    // Create user and record invite code usage in a transaction
     const passwordHash = bcrypt.hashSync(password, 10);
 
     const registerUser = db.transaction(() => {
         const result = db.prepare('INSERT INTO users (username, password_hash, default_password) VALUES (?, ?, ?)')
             .run(username, passwordHash, password);
 
-        db.prepare("UPDATE invite_codes SET used_by = ?, used_at = datetime('now') WHERE id = ?")
-            .run(result.lastInsertRowid, invite.id);
+        // Record the usage (allow multiple users per code)
+        db.prepare("INSERT INTO invite_code_uses (invite_code_id, user_id) VALUES (?, ?)")
+            .run(invite.id, result.lastInsertRowid);
 
         return result;
     });
