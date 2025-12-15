@@ -72,23 +72,33 @@ router.post('/register', (req, res) => {
         return res.status(400).json({ error: 'Invalid or already used invite code' });
     }
 
-    // Create user
+    // Create user and mark invite code as used in a transaction
     const passwordHash = bcrypt.hashSync(password, 10);
-    const result = db.prepare('INSERT INTO users (username, password_hash, default_password) VALUES (?, ?, ?)')
-        .run(username, passwordHash, password);
 
-    // Mark invite code as used
-    db.prepare('UPDATE invite_codes SET used_by = ?, used_at = datetime("now") WHERE id = ?')
-        .run(result.lastInsertRowid, invite.id);
+    const registerUser = db.transaction(() => {
+        const result = db.prepare('INSERT INTO users (username, password_hash, default_password) VALUES (?, ?, ?)')
+            .run(username, passwordHash, password);
 
-    res.json({
-        success: true,
-        message: 'Registration successful',
-        user: {
-            id: result.lastInsertRowid,
-            username
-        }
+        db.prepare("UPDATE invite_codes SET used_by = ?, used_at = datetime('now') WHERE id = ?")
+            .run(result.lastInsertRowid, invite.id);
+
+        return result;
     });
+
+    try {
+        const result = registerUser();
+        res.json({
+            success: true,
+            message: 'Registration successful',
+            user: {
+                id: result.lastInsertRowid,
+                username
+            }
+        });
+    } catch (err) {
+        console.error('Registration error:', err);
+        return res.status(500).json({ error: 'Registration failed, please try again' });
+    }
 });
 
 module.exports = router;
