@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="/js/icons.js"></script>
     <script src="/js/theme.js"></script>
 </head>
 
@@ -24,8 +25,14 @@
                 </div>
                 <nav class="flex gap-sm items-center">
                     <a id="adminLink" href="/app/admin" class="hidden"> Admin Panel</a>
-                    <a id="settingsLink" class="hidden"> Settings</a>
-                    <button id="unlockBtn">🔓 Unlock</button>
+                    <div id="userMenu" class="dropdown hidden">
+                        <span id="displayNameLabel" class="dropdown-trigger"></span>
+                        <div class="dropdown-menu">
+                            <a id="settingsLink" class="dropdown-item">Settings</a>
+                            <button id="signOutBtn" class="dropdown-item">Sign Out</button>
+                        </div>
+                    </div>
+                    <button id="unlockBtn">Sign In</button>
                     <button id="themeToggle" class="theme-toggle" title="Toggle theme"></button>
                 </nav>
             </div>
@@ -41,8 +48,8 @@
                             <h2 style="margin-bottom: var(--spacing-lg);">Create New Paste</h2>
 
                             <div class="tabs" style="border-bottom: none; margin-bottom: var(--spacing-md);">
-                                <button class="tab active" data-type="text">📝 Text</button>
-                                <button class="tab" data-type="file">📁 File</button>
+                                <button class="tab active" data-type="text"><span class="tab-icon"></span> Text</button>
+                                <button class="tab" data-type="file"><span class="tab-icon"></span> File</button>
                             </div>
 
                             <form id="createPasteForm">
@@ -55,7 +62,7 @@
                                 <!-- File Input -->
                                 <div id="fileInput" class="form-group hidden">
                                     <div class="file-upload" id="dropZone">
-                                        <div class="file-upload-icon">📤</div>
+                                        <div class="file-upload-icon" id="uploadIcon"></div>
                                         <p class="file-upload-text">Drag & drop a file or click to browse</p>
                                         <input type="file" id="pasteFile">
                                     </div>
@@ -148,7 +155,7 @@
                             <h2 style="margin-bottom: var(--spacing-md);">Pastes</h2>
                             <div id="pasteListContent" class="paste-list-simple">
                                 <div class="empty-state">
-                                    <div class="empty-state-icon">📭</div>
+                                    <div class="empty-state-icon" id="emptyIcon"></div>
                                     <p>Loading...</p>
                                 </div>
                             </div>
@@ -163,7 +170,7 @@
     <div class="modal-overlay" id="unlockModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>🔓 Unlock Homepage</h3>
+                <h3><span id="unlockModalIcon"></span> Unlock Homepage</h3>
                 <button class="modal-close" onclick="closeModal('unlockModal')">&times;</button>
             </div>
             <form id="unlockForm">
@@ -211,14 +218,14 @@
     <div class="modal-overlay" id="generatedPasswordModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>🔑 Generated Password</h3>
+                <h3><span id="keyModalIcon"></span> Generated Password</h3>
                 <button class="modal-close" onclick="closeModal('generatedPasswordModal')">&times;</button>
             </div>
             <p>Your paste was created with this password:</p>
             <div class="code-block" id="generatedPassword"
                 style="margin-top: var(--spacing-md); font-size: 1.2rem; text-align: center;"></div>
-            <p class="text-muted" style="margin-top: var(--spacing-md);">⚠️ Save this password - it won't be shown
-                again!</p>
+            <p class="text-muted" style="margin-top: var(--spacing-md);"><span id="warningIcon"></span> Save this
+                password - it won't be shown again!</p>
         </div>
     </div>
 
@@ -226,7 +233,7 @@
     <div class="modal-overlay" id="deleteModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>🗑️ Delete Paste</h3>
+                <h3><span id="deleteModalIcon"></span> Delete Paste</h3>
                 <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
             </div>
             <p>Are you sure you want to delete this paste? This action cannot be undone.</p>
@@ -245,6 +252,17 @@
         let currentPasteId = null;
         let currentPasteType = null;
         let pasteType = 'text';
+
+        // Initialize icons
+        document.querySelectorAll('.tab-icon').forEach((el, i) => {
+            el.innerHTML = i === 0 ? Icons.fileText('sm') : Icons.folder('sm');
+        });
+        document.getElementById('uploadIcon').innerHTML = Icons.upload('2xl');
+        document.getElementById('emptyIcon').innerHTML = Icons.inbox('2xl');
+        document.getElementById('unlockModalIcon').innerHTML = Icons.unlock('md');
+        document.getElementById('keyModalIcon').innerHTML = Icons.key('md');
+        document.getElementById('warningIcon').innerHTML = Icons.alertTriangle('sm');
+        document.getElementById('deleteModalIcon').innerHTML = Icons.trash('md');
 
         // Initialize
         document.getElementById('username').textContent = `/ ${pageUsername}`;
@@ -318,7 +336,7 @@
                 display.classList.remove('hidden');
                 display.innerHTML = `
           <div class="alert alert-info">
-            📎 ${file.name} (${formatSize(file.size)})
+            ${Icons.paperclip('sm')} ${file.name} (${formatSize(file.size)})
           </div>
         `;
                 // Update name options when file is selected
@@ -384,7 +402,7 @@
 
                 // Update display name in header and page title
                 const displayName = data.user.displayName || pageUsername;
-                document.getElementById('username').textContent = `/ ${displayName}`;
+                // Header always shows URL username, page title shows display name
                 document.getElementById('pageTitle').textContent = `${displayName} - Pastry`;
 
                 // Update allowAnonymousUpload from server
@@ -401,7 +419,7 @@
                 if (data.pastes.length === 0) {
                     container.innerHTML = `
             <div class="empty-state">
-              <div class="empty-state-icon">📭</div>
+              <div class="empty-state-icon">${Icons.inbox('2xl')}</div>
               <p>No pastes yet</p>
             </div>
           `;
@@ -412,9 +430,9 @@
           <div class="paste-item" data-id="${paste.id}" onclick="viewPaste('${paste.id}', '${paste.type}', ${paste.has_password})">
             <div class="paste-info">
               <div class="paste-name">
-                <span class="icon">${paste.type === 'text' ? '📝' : '📁'}</span>
+                <span class="icon">${paste.type === 'text' ? Icons.fileText('sm') : Icons.folder('sm')}</span>
                 ${paste.name}
-                ${paste.has_password ? '<span class="badge">🔒</span>' : ''}
+                ${paste.has_password ? `<span class="badge">${Icons.lock('sm')}</span>` : ''}
               </div>
               <div class="paste-meta">
                 <span>${formatDate(paste.created_at)}</span>
@@ -454,8 +472,13 @@
                 allowAnonymousUpload = result.user.allow_anonymous_upload;
 
                 document.getElementById('unlockBtn').classList.add('hidden');
-                document.getElementById('settingsLink').classList.remove('hidden');
                 document.getElementById('createSection').classList.remove('hidden');
+
+                // Show display name in nav
+                const userData = await API.getUserPage(pageUsername);
+                const displayName = userData.user.displayName || pageUsername;
+                document.getElementById('displayNameLabel').textContent = displayName;
+                document.getElementById('userMenu').classList.remove('hidden');
 
                 closeModal('unlockModal');
                 loadPastes();
@@ -639,8 +662,12 @@
                 allowAnonymousUpload = userData.allowAnonymousUpload;
 
                 document.getElementById('unlockBtn').classList.add('hidden');
-                document.getElementById('settingsLink').classList.remove('hidden');
                 document.getElementById('createSection').classList.remove('hidden');
+
+                // Show display name in nav
+                const displayName = userData.user.displayName || pageUsername;
+                document.getElementById('displayNameLabel').textContent = displayName;
+                document.getElementById('userMenu').classList.remove('hidden');
 
                 loadPastes();
             } catch (err) {
@@ -650,6 +677,26 @@
         }
 
         checkSession();
+
+        // User menu dropdown
+        const userMenu = document.getElementById('userMenu');
+        const displayNameLabel = document.getElementById('displayNameLabel');
+
+        displayNameLabel.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userMenu.classList.toggle('open');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            userMenu.classList.remove('open');
+        });
+
+        // Sign out
+        document.getElementById('signOutBtn').addEventListener('click', () => {
+            API.clearUserToken();
+            window.location.reload();
+        });
     </script>
 </body>
 

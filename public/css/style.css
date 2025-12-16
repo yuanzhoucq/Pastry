@@ -212,8 +212,8 @@ a:hover {
 .header-username {
   display: inline-block;
   font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-weight: 400;
+  color: var(--text-muted);
   margin: 0 0.35em;
 }
 
@@ -225,6 +225,7 @@ a:hover {
 
 /* Header Navigation Links */
 .header-bar nav a,
+.header-bar nav span,
 .header-bar nav button:not(.theme-toggle) {
   background: transparent;
   border: none;
@@ -986,4 +987,117 @@ a:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border-hover);
+}
+
+/* SVG Icons */
+.icon svg,
+.btn-icon-text svg,
+.tab-icon svg,
+.badge svg {
+  display: inline-block;
+  vertical-align: -0.125em;
+}
+
+.btn-icon-text,
+.tab-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.25em;
+  vertical-align: middle;
+}
+
+.badge svg {
+  vertical-align: -0.1em;
+}
+
+h3>span svg {
+  vertical-align: -0.15em;
+}
+
+.empty-state-icon svg {
+  opacity: 0.5;
+}
+
+.file-upload-icon svg {
+  opacity: 0.6;
+}
+
+.alert svg {
+  vertical-align: -0.15em;
+  margin-right: 0.25em;
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-trigger {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.dropdown-trigger::after {
+  content: '';
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  opacity: 0.6;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  min-width: 120px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
+  z-index: 200;
+}
+
+.dropdown.open .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.dropdown-item:hover,
+.dropdown-menu button.dropdown-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.dropdown-item:first-child {
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+}
+
+.dropdown-item:last-child {
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
 }

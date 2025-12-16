@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="/js/icons.js"></script>
     <script src="/js/theme.js"></script>
 </head>
 
@@ -34,11 +35,12 @@
                 <!-- Not Unlocked State -->
                 <div id="lockedState" class="card text-center">
                     <div style="padding: var(--spacing-xl);">
-                        <div style="font-size: 3rem; margin-bottom: var(--spacing-md);">🔒</div>
+                        <div style="font-size: 3rem; margin-bottom: var(--spacing-md);" id="lockIcon"></div>
                         <h2 style="margin-bottom: var(--spacing-md);">Authentication Required</h2>
                         <p class="text-muted" style="margin-bottom: var(--spacing-lg);">Please unlock your profile to
                             access settings.</p>
-                        <button class="btn btn-primary" onclick="openModal('unlockModal')">🔓 Unlock</button>
+                        <button class="btn btn-primary" onclick="openModal('unlockModal')"><span
+                                id="unlockBtnIcon"></span> Unlock</button>
                     </div>
                 </div>
 
@@ -99,7 +101,7 @@
     <div class="modal-overlay" id="unlockModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>🔓 Unlock Profile</h3>
+                <h3><span id="unlockModalIcon"></span> Unlock Profile</h3>
                 <button class="modal-close" onclick="closeModal('unlockModal')">&times;</button>
             </div>
             <form id="unlockForm">
@@ -124,6 +126,11 @@
         document.getElementById('headerPath').textContent = `/ ${pageUsername} / setting`;
         document.getElementById('backToProfile').href = `/${pageUsername}`;
         document.getElementById('displayUsername').textContent = pageUsername;
+
+        // Initialize icons
+        document.getElementById('lockIcon').innerHTML = Icons.lock('3xl');
+        document.getElementById('unlockBtnIcon').innerHTML = Icons.unlock('sm');
+        document.getElementById('unlockModalIcon').innerHTML = Icons.unlock('md');
 
         let isUnlocked = false;
         let currentDisplayName = '';
