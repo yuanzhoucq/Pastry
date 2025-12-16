@@ -44,7 +44,7 @@
                     <div class="user-layout">
                         <!-- Left: Create Paste Section -->
                         <div id="createSection" class="hidden">
-                            <h2 style="margin-bottom: var(--spacing-lg);">Create New Paste</h2>
+                            <h2 class="mb-lg">Create New Paste</h2>
 
                             <div class="tabs" style="border-bottom: none; margin-bottom: var(--spacing-md);">
                                 <button class="tab active" data-type="text"><span class="tab-icon"></span> Text</button>
@@ -151,7 +151,7 @@
 
                         <!-- Right: Paste List -->
                         <div id="pasteList">
-                            <h2 style="margin-bottom: var(--spacing-md);">Pastes</h2>
+                            <h2 class="mb-md">Pastes</h2>
                             <div id="pasteListContent" class="paste-list-simple">
                                 <div class="empty-state">
                                     <div class="empty-state-icon" id="emptyIcon"></div>
@@ -169,7 +169,7 @@
     <div class="modal-overlay" id="unlockModal">
         <div class="modal">
             <div class="modal-header">
-                <h3><span id="unlockModalIcon"></span> Unlock Homepage</h3>
+                <h3><span id="unlockModalIcon"></span> Sign In</h3>
                 <button class="modal-close" onclick="closeModal('unlockModal')">&times;</button>
             </div>
             <form id="unlockForm">
@@ -178,7 +178,7 @@
                     <label class="form-label">Your Password</label>
                     <input type="password" class="form-input" id="unlockPassword" required>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Unlock</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
             </form>
         </div>
     </div>

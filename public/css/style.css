@@ -192,8 +192,33 @@ a:hover {
 }
 
 .page-title h1 {
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 600;
+}
+
+/* Margins Utility */
+.mb-sm {
+  margin-bottom: var(--spacing-sm);
+}
+
+.mb-md {
+  margin-bottom: var(--spacing-md);
+}
+
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
+}
+
+.mt-sm {
+  margin-top: var(--spacing-sm);
+}
+
+.mt-md {
+  margin-top: var(--spacing-md);
+}
+
+.mt-lg {
+  margin-top: var(--spacing-lg);
 }
 
 .header-home {

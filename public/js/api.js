@@ -239,8 +239,26 @@ function showModal(options) {
         });
     }
 
-    const icons = { success: '✅', error: '❌', confirm: '⚠️', info: 'ℹ️' };
-    document.getElementById('universalModalTitle').textContent = `${icons[type] || ''} ${title}`;
+    const icons = {
+        success: Icons.check ? Icons.check() : '✅',
+        error: Icons.x ? Icons.x() : '❌',
+        confirm: Icons.alertTriangle ? Icons.alertTriangle() : '⚠️',
+        info: Icons.info ? Icons.info() : 'ℹ️'
+    };
+    const titleEl = document.getElementById('universalModalTitle');
+    titleEl.innerHTML = ''; // Clear previous content
+
+    // Icon
+    const iconSpan = document.createElement('span');
+    iconSpan.style.marginRight = '8px';
+    iconSpan.style.display = 'inline-flex';
+    iconSpan.style.verticalAlign = 'text-bottom';
+    iconSpan.innerHTML = icons[type] || '';
+    titleEl.appendChild(iconSpan);
+
+    // Text
+    titleEl.appendChild(document.createTextNode(title));
+
     document.getElementById('universalModalMessage').textContent = message;
 
     const actionsDiv = document.getElementById('universalModalActions');
