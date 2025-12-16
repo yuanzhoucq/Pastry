@@ -132,13 +132,25 @@ const adminUser = db.prepare('SELECT id FROM users WHERE username = ?').get('adm
 if (!adminUser) {
   const adminPassword = generateWordPassword();
   const passwordHash = bcrypt.hashSync(adminPassword, 10);
-  db.prepare('INSERT INTO users (username, password_hash, is_admin, default_password) VALUES (?, ?, 1, ?)')
-    .run('admin', passwordHash, adminPassword);
+  // Note: We no longer store default_password for new admin
+  db.prepare('INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)')
+    .run('admin', passwordHash);
+
+  // SECURITY: Write admin credentials to a file instead of console
+  // This file should be deleted after first login
+  const credentialsFile = path.join(dataDir, 'ADMIN_CREDENTIALS.txt');
+  fs.writeFileSync(credentialsFile,
+    `Admin Account Created\n` +
+    `======================\n` +
+    `Username: admin\n` +
+    `Password: ${adminPassword}\n\n` +
+    `IMPORTANT: Delete this file after logging in!\n`
+  );
 
   console.log('='.repeat(50));
-  console.log('Admin account created:');
-  console.log(`  Username: admin`);
-  console.log(`  Password: ${adminPassword}`);
+  console.log('Admin account created!');
+  console.log(`Credentials saved to: ${credentialsFile}`);
+  console.log('IMPORTANT: Delete this file after first login!');
   console.log('='.repeat(50));
 }
 

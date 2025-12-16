@@ -7,9 +7,12 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../config/database');
 const { generateWordPassword } = require('../utils/words');
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../middleware/auth');
+const { JWT_SECRET, generateDownloadToken, verifyDownloadToken } = require('../middleware/auth');
 
 const router = express.Router();
+
+// SECURITY: Block dangerous file extensions that could be executed
+const BLOCKED_EXTENSIONS = ['.exe', '.bat', '.cmd', '.sh', '.ps1', '.vbs', '.js', '.html', '.htm', '.svg', '.php', '.asp', '.aspx', '.jsp'];
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -32,6 +35,12 @@ const upload = multer({
     fileFilter: (req, file, cb) => {
         // Re-encode originalname from latin1 to UTF-8
         file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+
+        // SECURITY: Block dangerous file extensions
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (BLOCKED_EXTENSIONS.includes(ext)) {
+            return cb(new Error(`File type ${ext} is not allowed for security reasons`), false);
+        }
         cb(null, true);
     }
 });
@@ -89,8 +98,8 @@ router.post('/', upload.single('file'), (req, res) => {
         return res.status(400).json({ error: `File exceeds maximum size of ${maxFileSizeMb}MB` });
     }
 
-    // Generate paste ID and name
-    const id = uuidv4().slice(0, 8);
+    // SECURITY: Use 12-character IDs for better entropy
+    const id = uuidv4().replace(/-/g, '').slice(0, 12);
 
     // Generate friendly default name: "Text Dec 15 18:04" or "File Dec 15 18:04"
     let pasteName = name;
@@ -250,9 +259,12 @@ router.post('/:id/verify', (req, res) => {
     if (paste.type === 'text') {
         res.json({ content: paste.content });
     } else {
+        // SECURITY: Generate a secure, time-limited download token
+        const downloadToken = generateDownloadToken(paste.id);
         res.json({
             download: true,
-            filename: paste.original_filename
+            filename: paste.original_filename,
+            downloadToken
         });
     }
 });
@@ -272,9 +284,11 @@ router.get('/:id/download', (req, res) => {
         return res.status(404).json({ error: 'File has expired' });
     }
 
-    // If password protected, need a valid download token
-    if (paste.password_hash && token !== paste.id) {
-        return res.status(401).json({ error: 'Access denied' });
+    // SECURITY: For password-protected files, verify the secure download token
+    if (paste.password_hash) {
+        if (!token || !verifyDownloadToken(token, paste.id)) {
+            return res.status(401).json({ error: 'Invalid or expired download token. Please verify password again.' });
+        }
     }
 
     const filePath = path.join(__dirname, '../../uploads', paste.file_path);

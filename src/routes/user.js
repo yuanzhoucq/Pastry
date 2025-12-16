@@ -1,8 +1,18 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const rateLimit = require('express-rate-limit');
 const db = require('../config/database');
 
 const router = express.Router();
+
+// SECURITY: Rate limiter for unlock endpoint (5 attempts per 15 minutes per IP)
+const unlockLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts
+    message: { error: 'Too many unlock attempts, please try again after 15 minutes' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // Get user info and pastes (public)
 router.get('/:username', (req, res) => {
@@ -64,7 +74,8 @@ router.get('/:username', (req, res) => {
 });
 
 // Unlock user homepage (verify user password for management)
-router.post('/:username/unlock', (req, res) => {
+// SECURITY: Rate limited to prevent brute force attacks
+router.post('/:username/unlock', unlockLimiter, (req, res) => {
     const { username } = req.params;
     const { password } = req.body;
 

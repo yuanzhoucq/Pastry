@@ -54,6 +54,11 @@ router.post('/register', (req, res) => {
         return res.status(400).json({ error: 'Username must be 3-30 characters, alphanumeric, dash, or underscore only' });
     }
 
+    // SECURITY: Password policy - minimum 8 characters
+    if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
+
     // Validate display name if provided (allow any characters, max 50)
     const trimmedDisplayName = displayName ? displayName.trim() : null;
     if (trimmedDisplayName && trimmedDisplayName.length > 50) {
@@ -78,12 +83,12 @@ router.post('/register', (req, res) => {
         return res.status(400).json({ error: 'Invalid or disabled invite code' });
     }
 
-    // Create user and record invite code usage in a transaction
+    // SECURITY: Create user WITHOUT storing plaintext password
     const passwordHash = bcrypt.hashSync(password, 10);
 
     const registerUser = db.transaction(() => {
-        const result = db.prepare('INSERT INTO users (username, password_hash, default_password, display_name) VALUES (?, ?, ?, ?)')
-            .run(username, passwordHash, password, trimmedDisplayName);
+        const result = db.prepare('INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)')
+            .run(username, passwordHash, trimmedDisplayName);
 
         // Record the usage (allow multiple users per code)
         db.prepare("INSERT INTO invite_code_uses (invite_code_id, user_id) VALUES (?, ?)")

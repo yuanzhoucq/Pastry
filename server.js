@@ -1,6 +1,8 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 // Initialize database (creates tables and admin user)
 require('./src/config/database');
@@ -13,6 +15,29 @@ const { startCleanupJob } = require('./src/utils/cleanup');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// SECURITY: Add security headers via helmet
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:"],
+        },
+    },
+    crossOriginEmbedderPolicy: false,
+}));
+
+// SECURITY: Rate limiter for auth endpoints (5 attempts per 15 minutes)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts
+    message: { error: 'Too many login attempts, please try again after 15 minutes' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // Middleware
 app.use(express.json());
@@ -30,8 +55,8 @@ for (const dir of dirs) {
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API routes
-app.use('/api/auth', authRoutes);
+// API routes - Apply rate limiter to auth routes
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/pastes', pasteRoutes);

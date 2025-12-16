@@ -1,7 +1,17 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const db = require('../config/database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// SECURITY: Require JWT_SECRET to be set - fail fast if not configured
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    console.error('='.repeat(50));
+    console.error('SECURITY ERROR: JWT_SECRET environment variable is not set!');
+    console.error('Set it before starting the server:');
+    console.error('  JWT_SECRET=your-secret-key npm start');
+    console.error('='.repeat(50));
+    process.exit(1);
+}
 
 // Middleware to verify admin JWT token
 function requireAdmin(req, res, next) {
@@ -32,9 +42,25 @@ function requireAdmin(req, res, next) {
     }
 }
 
-// Generate JWT token
+// Generate JWT token for user sessions
 function generateToken(userId) {
     return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '24h' });
 }
 
-module.exports = { requireAdmin, generateToken, JWT_SECRET };
+// Generate secure download token (short-lived, for file downloads after password verification)
+function generateDownloadToken(pasteId) {
+    return jwt.sign({ pasteId, type: 'download' }, JWT_SECRET, { expiresIn: '5m' });
+}
+
+// Verify download token
+function verifyDownloadToken(token, pasteId) {
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        return decoded.type === 'download' && decoded.pasteId === pasteId;
+    } catch {
+        return false;
+    }
+}
+
+module.exports = { requireAdmin, generateToken, generateDownloadToken, verifyDownloadToken, JWT_SECRET };
+

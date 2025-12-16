@@ -10,9 +10,10 @@ const router = express.Router();
 router.use(requireAdmin);
 
 // Get all users
+// SECURITY: Don't return default_password in the response
 router.get('/users', (req, res) => {
     const users = db.prepare(`
-    SELECT id, username, display_name, is_admin, default_password, created_at,
+    SELECT id, username, display_name, is_admin, created_at,
       (SELECT COUNT(*) FROM pastes WHERE user_id = users.id) as paste_count
     FROM users
     ORDER BY created_at DESC
@@ -56,8 +57,9 @@ router.put('/users/:id', (req, res) => {
     if (resetPassword) {
         newPassword = generateWordPassword();
         const passwordHash = bcrypt.hashSync(newPassword, 10);
-        db.prepare('UPDATE users SET password_hash = ?, default_password = ? WHERE id = ?')
-            .run(passwordHash, newPassword, userId);
+        // SECURITY: Don't store new password in default_password column
+        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+            .run(passwordHash, userId);
     }
 
     if (typeof isAdmin === 'boolean' && userId !== req.user.id) {

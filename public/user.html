@@ -253,6 +253,13 @@
         let currentPasteType = null;
         let pasteType = 'text';
 
+        // SECURITY: Helper to escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Initialize icons
         document.querySelectorAll('.tab-icon').forEach((el, i) => {
             el.innerHTML = i === 0 ? Icons.fileText('sm') : Icons.folder('sm');
@@ -427,11 +434,11 @@
                 }
 
                 container.innerHTML = data.pastes.map(paste => `
-          <div class="paste-item" data-id="${paste.id}" onclick="viewPaste('${paste.id}', '${paste.type}', ${paste.has_password})">
+          <div class="paste-item" data-id="${escapeHtml(paste.id)}" onclick="viewPaste('${escapeHtml(paste.id)}', '${escapeHtml(paste.type)}', ${paste.has_password})">
             <div class="paste-info">
               <div class="paste-name">
                 <span class="icon">${paste.type === 'text' ? Icons.fileText('sm') : Icons.folder('sm')}</span>
-                ${paste.name}
+                ${escapeHtml(paste.name)}
                 ${paste.has_password ? `<span class="badge">${Icons.lock('sm')}</span>` : ''}
               </div>
               <div class="paste-meta">
@@ -442,7 +449,7 @@
             </div>
             ${isUnlocked ? `
               <div class="paste-actions" onclick="event.stopPropagation()">
-                <button class="btn btn-danger btn-sm" onclick="deletePaste('${paste.id}')">Delete</button>
+                <button class="btn btn-danger btn-sm" onclick="deletePaste('${escapeHtml(paste.id)}')">Delete</button>
               </div>
             ` : ''}
           </div>
@@ -604,6 +611,9 @@
             }
         }
 
+        // Store the download token when password is verified
+        let currentDownloadToken = null;
+
         function displayPasteContent(result) {
             const textContent = document.getElementById('textContent');
             const fileContent = document.getElementById('fileContent');
@@ -616,8 +626,10 @@
                 textContent.classList.add('hidden');
                 fileContent.classList.remove('hidden');
                 document.getElementById('fileName').textContent = result.filename;
+                // SECURITY: Use the secure download token from server
+                currentDownloadToken = result.downloadToken || currentPasteId;
                 document.getElementById('downloadBtn').onclick = () => {
-                    window.location.href = `/api/pastes/${currentPasteId}/download?token=${currentPasteId}`;
+                    window.location.href = `/api/pastes/${currentPasteId}/download?token=${encodeURIComponent(currentDownloadToken)}`;
                 };
             }
         }
