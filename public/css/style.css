@@ -133,6 +133,26 @@ a:hover {
   color: var(--accent-secondary);
 }
 
+.text-metallic {
+  /* Rich black to polished steel fade */
+  background: linear-gradient(90deg, #000000 0%, #2c3e50 60%, #7f8c8d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  position: relative;
+  display: inline-block;
+  letter-spacing: -0.02em;
+}
+
+[data-theme="dark"] .text-metallic {
+  /* Bright silver to graphite fade */
+  background: linear-gradient(90deg, #ffffff 0%, #d7d7d7 50%, #8e8e93 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 /* Layout */
 .container {
   width: 100%;
