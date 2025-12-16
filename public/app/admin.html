@@ -148,9 +148,10 @@
 
     <script src="/js/api.js"></script>
     <script>
-        // Check authentication
+        // Check authentication - redirect to home if not logged in
+        // Admin should sign in through their user page like everyone else
         if (!API.token) {
-            window.location.href = '/app/login';
+            window.location.href = '/';
         }
 
         // Tab switching
@@ -347,7 +348,7 @@
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            API.clearAdminToken();
+            API.clearToken();
             window.location.href = '/';
         });
 

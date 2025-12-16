@@ -5,7 +5,7 @@ const { generateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Admin login
+// User login (works for all users, including admins)
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
 
@@ -17,10 +17,6 @@ router.post('/login', (req, res) => {
 
     if (!user) {
         return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    if (!user.is_admin) {
-        return res.status(403).json({ error: 'Admin access only' });
     }
 
     const validPassword = bcrypt.compareSync(password, user.password_hash);

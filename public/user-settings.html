@@ -137,16 +137,17 @@
 
         // Check if already has a valid token
         async function checkAuth() {
-            if (!API.userToken) return;
+            if (!API.token) return;
 
             try {
-                // Try to load settings to verify token is valid
+                // Try to verify token by calling update with no changes
+                await API.updateUserSettings(pageUsername, {});
+                // Token seems valid for this user, load settings
                 const data = await API.getUserPage(pageUsername);
-                // Token seems valid, unlock the UI
                 unlockUI(data.allowAnonymousUpload, data.user.displayName);
             } catch (err) {
-                // Token invalid, clear it
-                API.clearUserToken();
+                // Token invalid or not for this user, clear it
+                API.clearToken();
             }
         }
 
@@ -174,7 +175,7 @@
 
             try {
                 const result = await API.unlockUserPage(pageUsername, password);
-                API.setUserToken(result.token);
+                API.setToken(result.token);
 
                 // Also fetch user data to get display name
                 const userData = await API.getUserPage(pageUsername);

@@ -24,7 +24,6 @@
                     </h1>
                 </div>
                 <nav class="flex gap-sm items-center">
-                    <a id="adminLink" href="/app/admin" class="hidden"> Admin Panel</a>
                     <div id="userMenu" class="dropdown hidden">
                         <span id="displayNameLabel" class="dropdown-trigger"></span>
                         <div class="dropdown-menu">
@@ -276,11 +275,6 @@
         document.getElementById('pageTitle').textContent = `${pageUsername} - Pastry`;
         document.getElementById('settingsLink').href = `/${pageUsername}/setting`;
 
-        // Show admin panel link if viewing admin user's page
-        if (pageUsername === 'admin') {
-            document.getElementById('adminLink').classList.remove('hidden');
-        }
-
         // Tab switching for paste type
         document.querySelectorAll('.tabs .tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -472,7 +466,7 @@
 
             try {
                 const result = await API.unlockUserPage(pageUsername, password);
-                API.setUserToken(result.token);
+                API.setToken(result.token);
                 isUnlocked = true;
 
                 // Update allow_anonymous_upload from unlock response
@@ -660,9 +654,9 @@
         // Initialize
         loadPastes();
 
-        // Check if we have a valid user token and restore session
+        // Check if we have a valid token and restore session
         async function checkSession() {
-            if (!API.userToken) return;
+            if (!API.token) return;
 
             try {
                 // Try to update settings with no changes - this verifies token AND user ownership
@@ -684,7 +678,7 @@
                 loadPastes();
             } catch (err) {
                 // Token invalid or doesn't belong to this user, clear it
-                API.clearUserToken();
+                API.clearToken();
             }
         }
 
@@ -706,7 +700,7 @@
 
         // Sign out
         document.getElementById('signOutBtn').addEventListener('click', () => {
-            API.clearUserToken();
+            API.clearToken();
             window.location.reload();
         });
     </script>

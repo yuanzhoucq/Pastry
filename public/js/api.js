@@ -1,27 +1,23 @@
 // API Client
 const API = {
     token: localStorage.getItem('token'),
-    userToken: sessionStorage.getItem('userToken'),
 
-    setAdminToken(token) {
+    setToken(token) {
         this.token = token;
         localStorage.setItem('token', token);
     },
 
-    setUserToken(token) {
-        this.userToken = token;
-        sessionStorage.setItem('userToken', token);
-    },
-
-    clearAdminToken() {
+    clearToken() {
         this.token = null;
         localStorage.removeItem('token');
     },
 
-    clearUserToken() {
-        this.userToken = null;
-        sessionStorage.removeItem('userToken');
-    },
+    // Legacy aliases for compatibility
+    setAdminToken(token) { this.setToken(token); },
+    setUserToken(token) { this.setToken(token); },
+    clearAdminToken() { this.clearToken(); },
+    clearUserToken() { this.clearToken(); },
+    get userToken() { return this.token; },
 
     async request(url, options = {}) {
         const headers = {
@@ -29,20 +25,8 @@ const API = {
             ...options.headers
         };
 
-        // Token selection priority:
-        // - useUserToken: explicitly use user token (for user-specific operations)
-        // - useAdminToken: explicitly use admin token (for admin operations)
-        // - default: prefer user token if available, fall back to admin token
-        let token;
-        if (options.useUserToken) {
-            token = this.userToken;
-        } else if (options.useAdminToken) {
-            token = this.token;
-        } else {
-            token = this.userToken || this.token;
-        }
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
+        if (this.token) {
+            headers['Authorization'] = `Bearer ${this.token}`;
         }
 
         const response = await fetch(url, {
@@ -60,11 +44,16 @@ const API = {
     },
 
     // Auth
-    async adminLogin(username, password) {
+    async login(username, password) {
         return this.request('/api/auth/login', {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
+    },
+
+    // Alias for backwards compatibility
+    async adminLogin(username, password) {
+        return this.login(username, password);
     },
 
     async register(username, password, inviteCode, displayName) {
@@ -76,50 +65,47 @@ const API = {
 
     // Admin
     async getUsers() {
-        return this.request('/api/admin/users', { useAdminToken: true });
+        return this.request('/api/admin/users');
     },
 
     async deleteUser(id) {
-        return this.request(`/api/admin/users/${id}`, { method: 'DELETE', useAdminToken: true });
+        return this.request(`/api/admin/users/${id}`, { method: 'DELETE' });
     },
 
     async updateUser(id, data) {
         return this.request(`/api/admin/users/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(data),
-            useAdminToken: true
+            body: JSON.stringify(data)
         });
     },
 
     async getSettings() {
-        return this.request('/api/admin/settings', { useAdminToken: true });
+        return this.request('/api/admin/settings');
     },
 
     async updateSettings(data) {
         return this.request('/api/admin/settings', {
             method: 'PUT',
-            body: JSON.stringify(data),
-            useAdminToken: true
+            body: JSON.stringify(data)
         });
     },
 
     async createInviteCode() {
-        return this.request('/api/admin/invite-codes', { method: 'POST', useAdminToken: true });
+        return this.request('/api/admin/invite-codes', { method: 'POST' });
     },
 
     async getInviteCodes() {
-        return this.request('/api/admin/invite-codes', { useAdminToken: true });
+        return this.request('/api/admin/invite-codes');
     },
 
     async deleteInviteCode(id) {
-        return this.request(`/api/admin/invite-codes/${id}`, { method: 'DELETE', useAdminToken: true });
+        return this.request(`/api/admin/invite-codes/${id}`, { method: 'DELETE' });
     },
 
     async toggleInviteCode(id, disabled) {
         return this.request(`/api/admin/invite-codes/${id}`, {
             method: 'PUT',
-            body: JSON.stringify({ disabled }),
-            useAdminToken: true
+            body: JSON.stringify({ disabled })
         });
     },
 
@@ -138,17 +124,15 @@ const API = {
     async updateUserSettings(username, settings) {
         return this.request(`/api/users/${username}/settings`, {
             method: 'PUT',
-            body: JSON.stringify(settings),
-            useUserToken: true
+            body: JSON.stringify(settings)
         });
     },
 
     // Pastes
     async createPaste(formData) {
-        const token = this.userToken || this.token;
         const response = await fetch('/api/pastes', {
             method: 'POST',
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            headers: this.token ? { 'Authorization': `Bearer ${this.token}` } : {},
             body: formData
         });
 
@@ -171,10 +155,7 @@ const API = {
     },
 
     async deletePaste(id) {
-        return this.request(`/api/pastes/${id}`, {
-            method: 'DELETE',
-            useUserToken: true
-        });
+        return this.request(`/api/pastes/${id}`, { method: 'DELETE' });
     },
 
     // Homepage
@@ -227,6 +208,7 @@ function showAlert(container, message, type = 'error') {
     setTimeout(() => alert.remove(), 5000);
 }
 
+// Modal functions - make globally accessible for inline onclick handlers
 function openModal(modalId) {
     document.getElementById(modalId).classList.add('active');
 }
@@ -234,6 +216,10 @@ function openModal(modalId) {
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
 }
+
+// Attach to window for inline onclick handlers in HTML
+window.openModal = openModal;
+window.closeModal = closeModal;
 
 // Universal modal for alerts and confirmations
 // Usage: showModal({ title, message, type, onConfirm })
@@ -251,13 +237,18 @@ function showModal(options) {
             <div class="modal">
                 <div class="modal-header">
                     <h3 id="universalModalTitle"></h3>
-                    <button class="modal-close" onclick="closeModal('universalModal')">&times;</button>
+                    <button class="modal-close" id="universalModalClose">&times;</button>
                 </div>
                 <p id="universalModalMessage"></p>
                 <div id="universalModalActions" style="display: flex; gap: var(--spacing-md); margin-top: var(--spacing-lg);"></div>
             </div>
         `;
         document.body.appendChild(modal);
+
+        // Add close button event listener
+        document.getElementById('universalModalClose').addEventListener('click', () => {
+            closeModal('universalModal');
+        });
     }
 
     const icons = { success: '✅', error: '❌', confirm: '⚠️', info: 'ℹ️' };
@@ -265,17 +256,33 @@ function showModal(options) {
     document.getElementById('universalModalMessage').textContent = message;
 
     const actionsDiv = document.getElementById('universalModalActions');
+    actionsDiv.innerHTML = ''; // Clear previous buttons
+
     if (type === 'confirm' && onConfirm) {
-        actionsDiv.innerHTML = `
-            <button class="btn" style="flex: 1;" onclick="closeModal('universalModal')">Cancel</button>
-            <button class="btn btn-danger" style="flex: 1;" id="universalModalConfirmBtn">Confirm</button>
-        `;
-        document.getElementById('universalModalConfirmBtn').onclick = () => {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn';
+        cancelBtn.style.flex = '1';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.addEventListener('click', () => closeModal('universalModal'));
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn btn-danger';
+        confirmBtn.style.flex = '1';
+        confirmBtn.textContent = 'Confirm';
+        confirmBtn.addEventListener('click', () => {
             closeModal('universalModal');
             onConfirm();
-        };
+        });
+
+        actionsDiv.appendChild(cancelBtn);
+        actionsDiv.appendChild(confirmBtn);
     } else {
-        actionsDiv.innerHTML = `<button class="btn btn-primary" style="flex: 1;" onclick="closeModal('universalModal')">OK</button>`;
+        const okBtn = document.createElement('button');
+        okBtn.className = 'btn btn-primary';
+        okBtn.style.flex = '1';
+        okBtn.textContent = 'OK';
+        okBtn.addEventListener('click', () => closeModal('universalModal'));
+        actionsDiv.appendChild(okBtn);
     }
 
     openModal('universalModal');
