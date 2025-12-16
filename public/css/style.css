@@ -39,10 +39,12 @@
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
-  /* Radius - Apple-like */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  /* Radius - Apple-like (Refined) */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  /* Standard button/input radius */
+  --radius-lg: 12px;
+  /* Card radius */
   --radius-full: 9999px;
 
   /* Transition */

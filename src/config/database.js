@@ -21,7 +21,6 @@ db.exec(`
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     is_admin INTEGER DEFAULT 0,
-    default_password TEXT,
     display_name TEXT,
     allow_anonymous_upload INTEGER DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now'))
@@ -91,7 +90,6 @@ const adminUser = db.prepare('SELECT id FROM users WHERE username = ?').get('adm
 if (!adminUser) {
   const adminPassword = generateWordPassword();
   const passwordHash = bcrypt.hashSync(adminPassword, 10);
-  // Note: We no longer store default_password for new admin
   db.prepare('INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)')
     .run('admin', passwordHash);
 
