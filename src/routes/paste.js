@@ -138,9 +138,9 @@ router.post('/', upload.single('file'), (req, res) => {
             passwordHash = null;
             break;
         case 'default':
-            if (user.default_password) {
-                passwordHash = bcrypt.hashSync(user.default_password, 10);
-            }
+            // SECURITY: 'default' password option removed - was exposing plaintext passwords
+            // Fall through to 'none' - no password protection
+            passwordHash = null;
             break;
         case 'random':
             generatedPassword = generateWordPassword();

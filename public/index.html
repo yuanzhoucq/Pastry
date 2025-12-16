@@ -42,6 +42,13 @@
 
   <script src="/js/api.js"></script>
   <script>
+    // SECURITY: Helper to escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     // Initialize loading icon
     document.getElementById('loadingIcon').innerHTML = Icons.inbox('2xl');
     async function loadHomepage() {
@@ -70,19 +77,22 @@
           content.innerHTML = `
             <h2 style="margin-bottom: var(--spacing-lg)">Users</h2>
             <div class="user-grid">
-              ${data.users.map(user => `
-                <a href="/${user.username}" class="user-card">
-                  <div class="user-avatar">${(user.displayName || user.username)[0].toUpperCase()}</div>
-                  <div class="user-name">${user.displayName || user.username}</div>
+              ${data.users.map(user => {
+            const displayName = escapeHtml(user.displayName || user.username);
+            const username = escapeHtml(user.username);
+            return `
+                <a href="/${username}" class="user-card">
+                  <div class="user-avatar">${displayName[0].toUpperCase()}</div>
+                  <div class="user-name">${displayName}</div>
                   <div class="user-stats">${user.paste_count} paste${user.paste_count !== 1 ? 's' : ''}</div>
                 </a>
-              `).join('')}
+              `}).join('')}
             </div>
           `;
         }
       } catch (err) {
         content.innerHTML = `
-          <div class="alert alert-error">Failed to load homepage: ${err.message}</div>
+          <div class="alert alert-error">Failed to load homepage: ${escapeHtml(err.message)}</div>
         `;
       }
     }

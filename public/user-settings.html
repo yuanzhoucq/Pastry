@@ -84,16 +84,8 @@
                                 Your URL path cannot be changed.
                             </p>
                         </div>
-                        <div class="form-group" id="defaultPasswordSection">
-                            <label class="form-label">Default Password</label>
-                            <div class="code-block" id="displayDefaultPassword" style="font-size: 1rem;"></div>
-                            <p class="text-muted" style="margin-top: var(--spacing-xs); font-size: 0.85rem;">
-                                This is your current password for unlocking your profile.
-                            </p>
-                        </div>
                     </div>
                 </div>
-            </div>
         </main>
     </div>
 
@@ -151,7 +143,7 @@
             }
         }
 
-        function unlockUI(allowAnonymousUpload, displayName = null, defaultPassword = null) {
+        function unlockUI(allowAnonymousUpload, displayName = null) {
             isUnlocked = true;
             document.getElementById('lockedState').classList.add('hidden');
             document.getElementById('settingsContent').classList.remove('hidden');
@@ -160,12 +152,7 @@
             // Set display name (empty if same as username to show placeholder)
             currentDisplayName = displayName === pageUsername ? '' : (displayName || '');
             document.getElementById('displayName').value = currentDisplayName;
-
-            if (defaultPassword) {
-                document.getElementById('displayDefaultPassword').textContent = defaultPassword;
-            } else {
-                document.getElementById('defaultPasswordSection').classList.add('hidden');
-            }
+            // SECURITY: No longer display default_password
         }
 
         // Unlock form
@@ -182,8 +169,7 @@
 
                 unlockUI(
                     result.user.allow_anonymous_upload,
-                    userData.user.displayName,
-                    result.user.default_password
+                    userData.user.displayName
                 );
 
                 closeModal('unlockModal');

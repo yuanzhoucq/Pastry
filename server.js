@@ -39,9 +39,9 @@ const authLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Middleware - SECURITY: Limit body size to prevent DoS
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Create directories if they don't exist
 const dirs = ['data', 'uploads'];

@@ -105,7 +105,7 @@ router.post('/:username/unlock', unlockLimiter, (req, res) => {
         user: {
             id: user.id,
             username: user.username,
-            default_password: user.default_password,
+            // SECURITY: Never expose default_password
             allow_anonymous_upload: user.allow_anonymous_upload === 1
         }
     });
