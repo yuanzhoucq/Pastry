@@ -36,7 +36,6 @@ const authLimiter = rateLimit({
     max: 5, // 5 attempts
     message: { error: 'Too many login attempts, please try again after 15 minutes' },
     standardHeaders: true,
-    legacyHeaders: false,
 });
 
 // Middleware - SECURITY: Limit body size to prevent DoS

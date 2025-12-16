@@ -11,7 +11,6 @@ const unlockLimiter = rateLimit({
     max: 5, // 5 attempts
     message: { error: 'Too many unlock attempts, please try again after 15 minutes' },
     standardHeaders: true,
-    legacyHeaders: false,
 });
 
 // Get user info and pastes (public)

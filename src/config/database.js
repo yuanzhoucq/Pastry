@@ -22,6 +22,7 @@ db.exec(`
     password_hash TEXT NOT NULL,
     is_admin INTEGER DEFAULT 0,
     default_password TEXT,
+    display_name TEXT,
     allow_anonymous_upload INTEGER DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now'))
   );
