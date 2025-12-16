@@ -12,13 +12,6 @@ const API = {
         localStorage.removeItem('token');
     },
 
-    // Legacy aliases for compatibility
-    setAdminToken(token) { this.setToken(token); },
-    setUserToken(token) { this.setToken(token); },
-    clearAdminToken() { this.clearToken(); },
-    clearUserToken() { this.clearToken(); },
-    get userToken() { return this.token; },
-
     async request(url, options = {}) {
         const headers = {
             'Content-Type': 'application/json',
@@ -49,11 +42,6 @@ const API = {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
-    },
-
-    // Alias for backwards compatibility
-    async adminLogin(username, password) {
-        return this.login(username, password);
     },
 
     async register(username, password, inviteCode, displayName) {
